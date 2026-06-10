@@ -185,33 +185,38 @@ function firstCapturedPhrase(text: string, patterns: RegExp[]) {
 }
 
 function extractFromTranscript(full: string, prior: Extracted): Extracted {
-  const t = full.replace(/\s+/g, " ").trim();
+  const t = normalizeDigits(full).replace(/\s+/g, " ").trim();
   const lower = t.toLowerCase();
   const out: Extracted = { ...prior };
 
-  // Name: "my name is X", "I am X", "this is X"
-  const name = t.match(/\b(?:my name is|i am|this is|i'm)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2})/);
-  if (name && !prior.customer_name) out.customer_name = name[1];
+  // Name: "my name is X", "I am X", "client name is X", Arabic "اسمي X"
+  const name = firstCapturedPhrase(t, [
+    /\b(?:my name is|client name is|customer name is|this is|i'm|i am)\s+([a-z][a-z'\-]+(?:\s+[a-z][a-z'\-]+){0,3})(?=\s+(?:and|from|my|i work|working|phone|mobile|salary|income|need|want|looking|$)|[.,]|$)/i,
+    /(?:اسمي|انا|أنا)\s+([\u0600-\u06ff]{2,}(?:\s+[\u0600-\u06ff]{2,}){0,3})(?=\s+(?:و|من|رقمي|هاتفي|اعمل|أعمل|راتبي|$)|[،.]|$)/,
+  ]);
+  if (name && !prior.customer_name && !/^(a|an|looking|calling|interested|working)$/i.test(name)) out.customer_name = /[\u0600-\u06ff]/.test(name) ? name : titleCase(name);
 
-  // Phone: Jordanian, UAE/GCC, or generic international numbers spoken with spaces/dashes
-  const phone =
-    t.match(/(?:phone(?:\s+number)?\s*(?:is|:)?|mobile\s*(?:is|:)?|call\s+me\s+on)\s*(\+?\d[\d\s()-]{7,24}\d)/i) ||
-    t.match(/(\+?962[\s-]?\d[\s-]?\d{3}[\s-]?\d{4}|\b07[789][\s-]?\d{3}[\s-]?\d{4}\b|(?:\+|00)\d[\d\s()-]{7,24}\d)/);
-  if (phone) out.phone_number = normalizePhone(phone[1]);
+  // Phone: numeric or spoken digits, Jordanian/UAE/GCC/international, English or Arabic prompts
+  const phonePhrase = firstCapturedPhrase(t, [
+    /(?:phone(?:\s+number)?|mobile|number|call\s+me\s+on|رقمي|هاتفي|موبايلي)\s*(?:is|:|هو)?\s*([+\d\s()\-]{7,35})(?=\s+(?:and|my|i|salary|income|work|need|want|$)|[.,،]|$)/i,
+    /(?:phone(?:\s+number)?|mobile|number|call\s+me\s+on)\s*(?:is|:)?\s*((?:plus|double|triple|zero|oh|o|one|two|three|four|five|six|seven|eight|nine|\s|-){14,})(?=\s+(?:and|my|i|salary|income|work|need|want|$)|[.,]|$)/i,
+    /(\+?962[\s-]?\d[\s-]?\d{3}[\s-]?\d{4}|\b07[789][\s-]?\d{3}[\s-]?\d{4}\b|(?:\+|00)\d[\d\s()-]{7,24}\d)/,
+  ]);
+  if (phonePhrase) out.phone_number = parsePhonePhrase(phonePhrase);
 
-  // Financing amount — "JOD 120,000", "120 thousand dinars", "120k"
-  const amt =
-    t.match(/(?:jod|jd|dinars?)\s*([\d,]{3,})/i) ||
-    t.match(/([\d,]{3,})\s*(?:jod|jd|dinars?)/i);
-  if (amt) out.financing_amount = amt[1].replace(/,/g, "");
-  else {
-    const k = lower.match(/\b(\d{1,3})\s*(?:thousand|k)\b/);
-    if (k) out.financing_amount = String(Number(k[1]) * 1000);
-  }
+  // Financing amount — "JOD 120,000", "120 thousand dinars", "one hundred twenty thousand", Arabic amount phrases
+  const amountPhrase = firstCapturedPhrase(t, [
+    /(?:need|want|looking\s+for|loan\s+of|amount\s+is|financing\s+amount\s+is|request(?:ing)?|بدي|اريد|أريد|محتاج)\s+([\w\u0600-\u06ff\s.,-]{2,60}?)(?:\s*(?:jod|jd|dinar|dinars|دينار))?(?=\s+(?:for|to buy|because|and my|my salary|salary|income|from|$)|[.,،]|$)/i,
+    /(?:jod|jd|dinars?|دينار)\s*([\w\u0600-\u06ff\s.,-]{2,50})(?=\s+(?:for|and|my|salary|income|$)|[.,،]|$)/i,
+    /([\w\u0600-\u06ff\s.,-]{2,50})\s*(?:jod|jd|dinars?|دينار)(?=\s+(?:for|and|my|salary|income|$)|[.,،]|$)/i,
+  ]);
+  if (amountPhrase) out.financing_amount = parseMoneyPhrase(amountPhrase);
 
   // Income — "salary 2000", "income 2500", "earn 1800"
-  const inc = t.match(/(?:salary|income|earn(?:ing)?s?|make|monthly)[^\d]{0,15}([\d,]{3,})/i);
-  if (inc) out.net_income_jod = inc[1].replace(/,/g, "");
+  const incomePhrase = firstCapturedPhrase(t, [
+    /(?:salary|income|net\s+income|monthly\s+income|earn(?:ing)?s?|make|راتبي|دخلي)\s*(?:is|:|حوالي)?\s*([\w\u0600-\u06ff\s.,-]{2,40})(?=\s+(?:and|my|i|work|need|want|$)|[.,،]|$)/i,
+  ]);
+  if (incomePhrase) out.net_income_jod = parseMoneyPhrase(incomePhrase);
 
   // Product keywords
   const productMap: [RegExp, Product][] = [
@@ -230,10 +235,10 @@ function extractFromTranscript(full: string, prior: Extracted): Extracted {
   }
 
   // Company / employer — "I work at X", "work for X", "employed by X", "ministry of X"
-  const roleOfCompany = t.match(/(?:work(?:ing)?\s+as|position\s+is|job\s+is)\s+(?:a|an)?\s*([a-z][a-z\- ]{2,45}?)\s+of\s+([A-Za-z][\w&.\- ]{2,80}?)(?:\.|,| and | for | with |$)/i);
+  const roleOfCompany = t.match(/(?:work(?:ing)?\s+as|position\s+is|job\s+is|i'?m\s+(?:a|an))\s+(?:a|an)?\s*([a-z][a-z\- ]{2,45}?)\s+(?:of|at|for|with)\s+([A-Za-z][\w&.\- ]{2,90}?)(?:\.|,| and | my | salary | income | need | want |$)/i);
   const co =
     roleOfCompany ||
-    t.match(/(?:i\s+work\s+(?:at|for|in)|i'?m\s+working\s+(?:at|for|in)|employed\s+(?:by|at)|company\s+is|employer\s+is)\s+([A-Za-z][\w&.\- ]{2,80}?)(?:\.|,| and | as | for | with |$)/i) ||
+    t.match(/(?:i\s+work\s+(?:at|for|in)|i'?m\s+working\s+(?:at|for|in)|employed\s+(?:by|at)|company\s+is|employer\s+is|اعمل\s+(?:في|لدى)|أعمل\s+(?:في|لدى))\s+([A-Za-z\u0600-\u06ff][\w\u0600-\u06ff&.\- ]{2,90}?)(?:\.|,|،| and | as | for | with | my | salary | income | need | want |$)/i) ||
     t.match(/\b(Ministry\s+of\s+[A-Z][\w ]+|Royal\s+Jordanian|Arab\s+Bank|Housing\s+Bank|Aramex|Zain\s+Jordan|Orange\s+Telecom|Jordan\s+Hospital|King\s+Hussein\s+Cancer\s+Center|PwC\s+Jordan|University\s+of\s+Jordan)\b/);
   if (roleOfCompany) out.company_name = cleanPhrase(roleOfCompany[2]);
   else if (co) out.company_name = cleanPhrase(co[1] || co[0]);
