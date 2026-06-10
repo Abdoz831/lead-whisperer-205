@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader, KPICard, ScoreCircle } from "@/components/elip/UI";
 import { CCNotesPanel } from "@/components/elip/CCNotesPanel";
 import { useElip, rlmName, stageClass, type Stage, type Lead } from "@/lib/elip-data";
+import { enrichLead } from "@/lib/enrich-lead.functions";
 
 export const Route = createFileRoute("/sales/pipeline")({
   component: Pipeline,
@@ -13,9 +15,34 @@ const STAGE_OPTIONS: Stage[] = ["No Answer", "Follow-up Scheduled", "Docs Pendin
 
 function Pipeline() {
   const { leads, updateLead } = useElip();
+  const enrichFn = useServerFn(enrichLead);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [showBriefing, setShowBriefing] = useState<Lead | null>(null);
   const [rejectLead, setRejectLead] = useState<Lead | null>(null);
+
+  async function runEnrich(l: Lead) {
+    updateLead(l.lead_id, { enrichment_status: "loading", enrichment_error: "" });
+    try {
+      const result = await enrichFn({
+        data: {
+          customer_name: l.customer_name,
+          company_name: l.company_name,
+          job_title: l.job_title,
+          product: l.product,
+          financing_amount: l.financing_amount,
+          net_income_jod: l.net_income_jod,
+          cc_notes: l.cc_notes,
+        },
+      });
+      updateLead(l.lead_id, { enrichment: result, enrichment_status: "idle" });
+      setExpanded(l.lead_id);
+      toast.success(`Social intel + sales playbook ready for ${l.customer_name}`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Failed to enrich lead";
+      updateLead(l.lead_id, { enrichment_status: "error", enrichment_error: msg });
+      toast.error(msg);
+    }
+  }
 
   const active = useMemo(
     () => leads.filter((l) => !["Queued", "Closed Won", "RLM-Reject", "RLM-Expired"].includes(l.current_status) && l.outcome !== "closed_won"),
@@ -84,7 +111,7 @@ function Pipeline() {
             <table className="w-full text-xs">
               <thead className="bg-zinc-50 text-zinc-600 text-[11px] uppercase tracking-wider">
                 <tr>
-                  {["", "Customer", "Days", "Product", "RLM", "Deal (JOD)", "Score", "Temp", "Stage", "Blocker", "Appian", "Actions"].map((h) => (
+                  {["", "Customer", "Days", "Product", "RLM", "Deal (JOD)", "Score", "Temp", "Stage", "Blocker", "Social Intel", "Appian", "Actions"].map((h) => (
                     <th key={h} className="text-left px-2 py-2 font-semibold whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -128,6 +155,30 @@ function Pipeline() {
                             }`}>{l.closing_blocker}</span>
                           )}
                         </td>
+                        <td className="px-2 py-2">
+                          {l.enrichment_status === "loading" ? (
+                            <span className="text-[10px] text-muted-foreground italic">Searching…</span>
+                          ) : l.enrichment ? (
+                            <button
+                              onClick={() => setExpanded(expanded === l.lead_id ? null : l.lead_id)}
+                              className="text-left max-w-[180px]"
+                              title={l.enrichment.professional_profile}
+                            >
+                              <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-bold mr-1 ${
+                                l.enrichment.confidence === "high" ? "bg-emerald-600 text-white" :
+                                l.enrichment.confidence === "medium" ? "bg-amber-500 text-white" :
+                                "bg-zinc-400 text-white"
+                              }`}>{l.enrichment.confidence.toUpperCase()}</span>
+                              <span className="text-[10px] text-navy underline decoration-dotted line-clamp-2">{l.enrichment.professional_profile}</span>
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => runEnrich(l)}
+                              className="bg-purple-600 text-white px-2 py-1 rounded text-[10px] font-semibold"
+                              title="Search public/social media via Tavily and generate a sales playbook"
+                            >🔎 Enrich</button>
+                          )}
+                        </td>
                         <td className="px-2 py-2 font-mono text-[11px]">
                           {l.appian_ticket || (l.current_status === "Booked" ? (
                             <button onClick={() => submitAppian(l.lead_id)} className="bg-gold text-gold-foreground px-2 py-1 rounded text-[10px] font-semibold">Submit to Appian →</button>
@@ -141,7 +192,8 @@ function Pipeline() {
                       </tr>
                       {expanded === l.lead_id && (
                         <tr className="bg-zinc-50/50">
-                          <td colSpan={12} className="p-4">
+                          <td colSpan={13} className="p-4 space-y-3">
+                            <EnrichmentPanel lead={l} onEnrich={() => runEnrich(l)} />
                             <CCNotesPanel lead={l} />
                             <div className="elip-card p-3">
                               <div className="text-[11px] font-semibold text-navy mb-1">RLM Notes (editable)</div>
@@ -173,6 +225,7 @@ function Pipeline() {
             <div className="text-xs"><strong>{showBriefing.product}</strong> · JOD {showBriefing.financing_amount.toLocaleString()}</div>
             <div className="text-xs">📞 Best time: {showBriefing.best_time_to_call}</div>
             <hr className="my-2" />
+            <EnrichmentPanel lead={showBriefing} />
             <CCNotesPanel lead={showBriefing} />
             {showBriefing.rlm_notes && (
               <div className="text-xs bg-zinc-50 p-3 rounded border"><strong>Previous RLM notes:</strong> {showBriefing.rlm_notes}</div>
@@ -211,6 +264,108 @@ function Modal({ children, title, onClose }: { children: React.ReactNode; title:
         </div>
         {children}
       </div>
+    </div>
+  );
+}
+
+function EnrichmentPanel({ lead, onEnrich }: { lead: Lead; onEnrich?: () => void }) {
+  const e = lead.enrichment;
+  if (!e) {
+    return (
+      <div className="elip-card p-3 border-l-4 border-purple-500">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-[11px] font-bold text-navy">🔎 Social Intelligence & Sales Playbook</div>
+            <div className="text-[11px] text-muted-foreground mt-0.5">
+              {lead.enrichment_status === "loading"
+                ? "Searching public sources via Tavily and writing playbook…"
+                : lead.enrichment_error
+                  ? `Error: ${lead.enrichment_error}`
+                  : "No public-profile lookup yet. Run enrichment to search social media and generate a sales-guru pitch tailored to this client."}
+            </div>
+          </div>
+          {onEnrich && (
+            <button
+              onClick={onEnrich}
+              disabled={lead.enrichment_status === "loading"}
+              className="bg-purple-600 disabled:bg-zinc-400 text-white px-3 py-1.5 rounded text-[11px] font-semibold whitespace-nowrap"
+            >{lead.enrichment_status === "loading" ? "Searching…" : "🔎 Enrich now"}</button>
+          )}
+        </div>
+      </div>
+    );
+  }
+  const confColor =
+    e.confidence === "high" ? "bg-emerald-600" : e.confidence === "medium" ? "bg-amber-500" : "bg-zinc-500";
+  return (
+    <div className="elip-card p-4 border-l-4 border-purple-500 space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <div className="text-[11px] font-bold text-navy">🔎 Social Intelligence & Sales Playbook</div>
+          <span className={`text-[9px] font-bold text-white px-1.5 py-0.5 rounded ${confColor}`}>
+            {e.confidence.toUpperCase()} CONFIDENCE
+          </span>
+        </div>
+        {onEnrich && (
+          <button onClick={onEnrich} className="text-[10px] text-purple-700 underline">Refresh</button>
+        )}
+      </div>
+
+      <div>
+        <div className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold">Profile</div>
+        <div className="text-xs text-navy font-medium">{e.professional_profile}</div>
+        <div className="text-xs text-zinc-700 mt-1">{e.social_summary}</div>
+        {e.interests.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            {e.interests.map((i) => (
+              <span key={i} className="bg-purple-100 text-purple-900 text-[9px] px-1.5 py-0.5 rounded">{i}</span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div>
+        <div className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold">Sales-coach insight</div>
+        <div className="text-xs text-zinc-800 whitespace-pre-wrap">{e.insights}</div>
+      </div>
+
+      <div>
+        <div className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold">Recommended pitch</div>
+        <div className="text-xs text-zinc-800 italic bg-purple-50 p-2 rounded border border-purple-100">{e.recommended_pitch}</div>
+      </div>
+
+      <div>
+        <div className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold">Talking points</div>
+        <ul className="list-disc pl-5 text-xs text-zinc-800 space-y-0.5">
+          {e.talking_points.map((t, i) => <li key={i}>{t}</li>)}
+        </ul>
+      </div>
+
+      <div>
+        <div className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold">If they object…</div>
+        <div className="space-y-1.5">
+          {e.objection_handlers.map((o, i) => (
+            <div key={i} className="text-xs">
+              <div className="font-semibold text-red-700">“{o.objection}”</div>
+              <div className="text-zinc-800">→ {o.response}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {e.sources.length > 0 && (
+        <div>
+          <div className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold">Sources</div>
+          <ul className="text-[11px] space-y-0.5">
+            {e.sources.slice(0, 8).map((s) => (
+              <li key={s.url} className="truncate">
+                <a href={s.url} target="_blank" rel="noreferrer" className="text-blue-700 hover:underline">{s.title || s.url}</a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <div className="text-[9px] text-zinc-400">Fetched {new Date(e.fetched_at).toLocaleString()}</div>
     </div>
   );
 }
