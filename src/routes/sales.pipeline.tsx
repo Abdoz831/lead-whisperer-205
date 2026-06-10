@@ -111,7 +111,7 @@ function Pipeline() {
             <table className="w-full text-xs">
               <thead className="bg-zinc-50 text-zinc-600 text-[11px] uppercase tracking-wider">
                 <tr>
-                  {["", "Customer", "Days", "Product", "RLM", "Deal (JOD)", "Score", "Temp", "Stage", "Blocker", "Appian", "Actions"].map((h) => (
+                  {["", "Customer", "Days", "Product", "RLM", "Deal (JOD)", "Score", "Temp", "Stage", "Blocker", "Social Intel", "Appian", "Actions"].map((h) => (
                     <th key={h} className="text-left px-2 py-2 font-semibold whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
