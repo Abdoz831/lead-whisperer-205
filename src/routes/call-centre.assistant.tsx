@@ -643,6 +643,8 @@ function Assistant() {
       /* noop */
     }
     autoAskRef.current = false;
+    submittedRef.current = false;
+
     setAutoAsk(false);
     lastAskedRef.current = null;
     setListening(false);
