@@ -52,6 +52,20 @@ type Extracted = {
   channel: string;
 };
 
+type DebugEntry = {
+  id: string;
+  ts: number;
+  source: "regex" | "ai" | "ai-error";
+  transcript: string;
+  raw: unknown;
+  confidence: number;
+  filled: number;
+  total: number;
+  changed: string[];
+  latencyMs?: number;
+  error?: string;
+};
+
 const EMPTY: Extracted = {
   customer_name: "",
   phone_number: "",
