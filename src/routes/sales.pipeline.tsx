@@ -225,6 +225,7 @@ function Pipeline() {
             <div className="text-xs"><strong>{showBriefing.product}</strong> · JOD {showBriefing.financing_amount.toLocaleString()}</div>
             <div className="text-xs">📞 Best time: {showBriefing.best_time_to_call}</div>
             <hr className="my-2" />
+            <EnrichmentPanel lead={showBriefing} />
             <CCNotesPanel lead={showBriefing} />
             {showBriefing.rlm_notes && (
               <div className="text-xs bg-zinc-50 p-3 rounded border"><strong>Previous RLM notes:</strong> {showBriefing.rlm_notes}</div>
