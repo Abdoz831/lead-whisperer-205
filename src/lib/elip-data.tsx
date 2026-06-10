@@ -228,6 +228,7 @@ function mk(partial: Partial<Lead>, idx: number): Lead {
     customer_name: "—",
     customer_cif: "NA",
     phone_number: "+9627" + String(10000000 + (stableHash(`${partial.customer_name ?? "lead"}-${idx}`) % 90000000)).padStart(8, "0"),
+    date_of_birth: "",
     net_income_jod: 1500,
     company_name: "—",
     product,
