@@ -57,16 +57,19 @@ function Sidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (
-    <aside className="w-64 shrink-0 bg-navy text-navy-foreground flex flex-col">
+      <aside className="w-64 shrink-0 bg-navy text-navy-foreground flex flex-col">
       <div className="px-5 py-5 border-b border-white/10">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">🏦</span>
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-md bg-primary flex items-center justify-center shadow-sm">
+            <Sparkles className="w-5 h-5 text-primary-foreground" strokeWidth={2.25} />
+          </div>
           <div>
             <div className="font-bold tracking-tight text-base leading-tight">ELIP 2026</div>
             <div className="text-[11px] text-white/60 leading-tight">Etihad Lead Intelligence Platform</div>
           </div>
         </div>
       </div>
+
 
       <nav className="flex-1 overflow-y-auto py-3 text-sm">
         {sections.map((s) => (
