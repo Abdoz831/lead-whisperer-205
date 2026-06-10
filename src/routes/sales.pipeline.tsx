@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader, KPICard, ScoreCircle } from "@/components/elip/UI";
 import { CCNotesPanel } from "@/components/elip/CCNotesPanel";
 import { useElip, rlmName, stageClass, type Stage, type Lead } from "@/lib/elip-data";
+import { enrichLead } from "@/lib/enrich-lead.functions";
 
 export const Route = createFileRoute("/sales/pipeline")({
   component: Pipeline,
