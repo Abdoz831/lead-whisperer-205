@@ -389,6 +389,16 @@ function Assistant() {
   const aiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const aiSeqRef = useRef(0);
   const lastSentRef = useRef("");
+  const askingRef = useRef(false);
+  const autoAskRef = useRef(false);
+  const [autoAsk, setAutoAsk] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
+  const lastAskedRef = useRef<keyof Extracted | null>(null);
+  const listeningRef = useRef(false);
+  listeningRef.current = listening;
+  const langRef = useRef(lang);
+  langRef.current = lang;
+
 
   function pushDebug(entry: Omit<DebugEntry, "id" | "ts">) {
     setDebugLog((prev) =>
