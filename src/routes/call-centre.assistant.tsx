@@ -3,19 +3,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/elip/UI";
-import {
-  useElip,
-  PRODUCTS,
-  CHANNELS,
-  WORK_DURATIONS,
-  type Product,
-} from "@/lib/elip-data";
+import { useElip, PRODUCTS, CHANNELS, WORK_DURATIONS, type Product } from "@/lib/elip-data";
 import { extractLeadFromTranscript } from "@/lib/extract-lead.functions";
 
 export const Route = createFileRoute("/call-centre/assistant")({
   component: Assistant,
 });
-
 
 // ------------ Web Speech API typings (loose) ------------
 type SRConstructor = new () => SpeechRecognitionLike;
@@ -38,7 +31,13 @@ interface SpeechRecognitionEventLike {
 }
 
 // ------------ Turn / extraction types ------------
-type Turn = { id: string; speaker: "agent" | "client" | "ai"; text: string; ts: number; interim?: boolean };
+type Turn = {
+  id: string;
+  speaker: "agent" | "client" | "ai";
+  text: string;
+  ts: number;
+  interim?: boolean;
+};
 
 type Extracted = {
   customer_name: string;
@@ -102,10 +101,50 @@ function normalizeDigits(value: string) {
 }
 
 const SMALL_NUMBERS: Record<string, number> = {
-  zero: 0, oh: 0, o: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9,
-  ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19,
-  twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90,
-  صفر: 0, واحد: 1, واحدة: 1, اثنين: 2, اتنين: 2, ثلاثة: 3, تلاتة: 3, اربعة: 4, أربعة: 4, خمسة: 5, ستة: 6, سبعة: 7, ثمانية: 8, تسعة: 9,
+  zero: 0,
+  oh: 0,
+  o: 0,
+  one: 1,
+  two: 2,
+  three: 3,
+  four: 4,
+  five: 5,
+  six: 6,
+  seven: 7,
+  eight: 8,
+  nine: 9,
+  ten: 10,
+  eleven: 11,
+  twelve: 12,
+  thirteen: 13,
+  fourteen: 14,
+  fifteen: 15,
+  sixteen: 16,
+  seventeen: 17,
+  eighteen: 18,
+  nineteen: 19,
+  twenty: 20,
+  thirty: 30,
+  forty: 40,
+  fifty: 50,
+  sixty: 60,
+  seventy: 70,
+  eighty: 80,
+  ninety: 90,
+  صفر: 0,
+  واحد: 1,
+  واحدة: 1,
+  اثنين: 2,
+  اتنين: 2,
+  ثلاثة: 3,
+  تلاتة: 3,
+  اربعة: 4,
+  أربعة: 4,
+  خمسة: 5,
+  ستة: 6,
+  سبعة: 7,
+  ثمانية: 8,
+  تسعة: 9,
 };
 
 function spokenNumberToNumber(value: string) {
@@ -147,7 +186,8 @@ function parseMoneyPhrase(value: string) {
   if (numeric) {
     const base = Number(numeric[1]);
     const scale = numeric[2]?.toLowerCase();
-    if (scale && ["k", "thousand", "الف", "ألف"].includes(scale)) return String(Math.round(base * 1000));
+    if (scale && ["k", "thousand", "الف", "ألف"].includes(scale))
+      return String(Math.round(base * 1000));
     if (scale && ["million", "مليون"].includes(scale)) return String(Math.round(base * 1_000_000));
     return String(Math.round(base));
   }
@@ -160,13 +200,25 @@ function parsePhonePhrase(value: string) {
   const compactDigits = text.replace(/[^+\d]/g, "");
   if (compactDigits.replace(/\D/g, "").length >= 7) return normalizePhone(compactDigits);
 
-  const tokens = text.match(/plus|double|triple|zero|oh|o|one|two|three|four|five|six|seven|eight|nine|[٠-٩۰-۹\d]|صفر|واحد|واحدة|اثنين|اتنين|ثلاثة|تلاتة|اربعة|أربعة|خمسة|ستة|سبعة|ثمانية|تسعة/g) ?? [];
+  const tokens =
+    text.match(
+      /plus|double|triple|zero|oh|o|one|two|three|four|five|six|seven|eight|nine|[٠-٩۰-۹\d]|صفر|واحد|واحدة|اثنين|اتنين|ثلاثة|تلاتة|اربعة|أربعة|خمسة|ستة|سبعة|ثمانية|تسعة/g,
+    ) ?? [];
   let out = "";
   let repeat = 1;
   for (const token of tokens) {
-    if (token === "plus") { out = "+"; continue; }
-    if (token === "double") { repeat = 2; continue; }
-    if (token === "triple") { repeat = 3; continue; }
+    if (token === "plus") {
+      out = "+";
+      continue;
+    }
+    if (token === "double") {
+      repeat = 2;
+      continue;
+    }
+    if (token === "triple") {
+      repeat = 3;
+      continue;
+    }
     const digit = /^\d$/.test(token) ? token : SMALL_NUMBERS[token]?.toString();
     if (digit !== undefined) {
       out += digit.repeat(repeat);
@@ -195,7 +247,8 @@ function extractFromTranscript(full: string, prior: Extracted): Extracted {
     /\b(?:i'm|i am)\s+(?!a\b|an\b|looking\b|calling\b|interested\b|working\b)([a-z][a-z'-]+(?:\s+[a-z][a-z'-]+){0,3})(?=\s+(?:and|from|my|phone|mobile|salary|income|need|want|$)|[.,]|$)/i,
     /(?:اسمي|انا|أنا)\s+([\u0600-\u06ff]{2,}(?:\s+[\u0600-\u06ff]{2,}){0,3})(?=\s+(?:و|من|رقمي|هاتفي|اعمل|أعمل|راتبي|$)|[،.]|$)/,
   ]);
-  if (name && !prior.customer_name && !/^(a|an|looking|calling|interested|working)$/i.test(name)) out.customer_name = /[\u0600-\u06ff]/.test(name) ? name : titleCase(name);
+  if (name && !prior.customer_name && !/^(a|an|looking|calling|interested|working)$/i.test(name))
+    out.customer_name = /[\u0600-\u06ff]/.test(name) ? name : titleCase(name);
 
   // Phone: numeric or spoken digits, Jordanian/UAE/GCC/international, English or Arabic prompts
   const phonePhrase = firstCapturedPhrase(t, [
@@ -241,21 +294,34 @@ function extractFromTranscript(full: string, prior: Extracted): Extracted {
     [/personal\s*loan|cash\s*loan|قرض\s*شخصي|تمويل\s*شخصي/i, "Personal Loan"],
   ];
   for (const [re, p] of productMap) {
-    if (re.test(lower)) { out.product = p; break; }
+    if (re.test(lower)) {
+      out.product = p;
+      break;
+    }
   }
 
   // Company / employer — "I work at X", "work for X", "employed by X", "ministry of X"
-  const roleOfCompany = t.match(/(?:work(?:ing)?\s+as|position\s+is|job\s+(?:title\s+)?is|i'?m\s+(?:a|an)?|i\s+am\s+(?:a|an)?)\s*([a-z][a-z -]{2,45}?)\s+(?:of|at|for|with)\s+([A-Za-z][\w&. -]{2,90}?)(?:\.|,| and | my | salary | income | need | want |$)/i);
+  const roleOfCompany = t.match(
+    /(?:work(?:ing)?\s+as|position\s+is|job\s+(?:title\s+)?is|i'?m\s+(?:a|an)?|i\s+am\s+(?:a|an)?)\s*([a-z][a-z -]{2,45}?)\s+(?:of|at|for|with)\s+([A-Za-z][\w&. -]{2,90}?)(?:\.|,| and | my | salary | income | need | want |$)/i,
+  );
   const co =
     roleOfCompany ||
-    t.match(/(?:i\s+work\s+(?:at|for|in)|i'?m\s+working\s+(?:at|for|in)|employed\s+(?:by|at)|company\s+is|employer\s+is|اعمل\s+(?:في|لدى)|أعمل\s+(?:في|لدى))\s+([A-Za-z\u0600-\u06ff][\w\u0600-\u06ff&.\- ]{2,90}?)(?:\.|,|،| and | as | for | with | my | salary | income | need | want |$)/i) ||
-    t.match(/\b(Ministry\s+of\s+[A-Z][\w ]+|Royal\s+Jordanian|Arab\s+Bank|Housing\s+Bank|Aramex|Zain\s+Jordan|Orange\s+Telecom|Jordan\s+Hospital|King\s+Hussein\s+Cancer\s+Center|PwC\s+Jordan|University\s+of\s+Jordan)\b/);
+    t.match(
+      /(?:i\s+work\s+(?:at|for|in)|i'?m\s+working\s+(?:at|for|in)|employed\s+(?:by|at)|company\s+is|employer\s+is|اعمل\s+(?:في|لدى)|أعمل\s+(?:في|لدى))\s+([A-Za-z\u0600-\u06ff][\w\u0600-\u06ff&.\- ]{2,90}?)(?:\.|,|،| and | as | for | with | my | salary | income | need | want |$)/i,
+    ) ||
+    t.match(
+      /\b(Ministry\s+of\s+[A-Z][\w ]+|Royal\s+Jordanian|Arab\s+Bank|Housing\s+Bank|Aramex|Zain\s+Jordan|Orange\s+Telecom|Jordan\s+Hospital|King\s+Hussein\s+Cancer\s+Center|PwC\s+Jordan|University\s+of\s+Jordan)\b/,
+    );
   if (roleOfCompany) out.company_name = cleanPhrase(roleOfCompany[2]);
   else if (co) out.company_name = cleanPhrase(co[1] || co[0]);
   else if (/self[-\s]?employed/i.test(t)) out.company_name = "Self-employed";
 
   // Job title — "I'm a teacher", "working as Secretary General", "I am a doctor/nurse/manager"
-  const job = roleOfCompany || t.match(/(?:i'?m\s+(?:a|an)|i\s+am\s+(?:a|an)|work(?:ing)?\s+as\s+(?:a|an)?|position\s+is|job\s+(?:title\s+)?is)\s+([a-z][a-z\- ]{2,45}?)(?:\.|,| at | with | for | in | of | and | my | salary | income |$)/i);
+  const job =
+    roleOfCompany ||
+    t.match(
+      /(?:i'?m\s+(?:a|an)|i\s+am\s+(?:a|an)|work(?:ing)?\s+as\s+(?:a|an)?|position\s+is|job\s+(?:title\s+)?is)\s+([a-z][a-z\- ]{2,45}?)(?:\.|,| at | with | for | in | of | and | my | salary | income |$)/i,
+    );
   if (job) out.job_title = titleCase(job[1]);
 
   // Work duration — "X years at", "for X years"
@@ -297,7 +363,12 @@ function Assistant() {
   const { addLead, currentUser } = useElip();
   const extractFn = useServerFn(extractLeadFromTranscript);
   const [turns, setTurns] = useState<Turn[]>([
-    { id: "ai-0", speaker: "ai", text: "Ready. Tap the mic and start your call. I'll transcribe live and fill the lead form as I detect details.", ts: Date.now() },
+    {
+      id: "ai-0",
+      speaker: "ai",
+      text: "Ready. Tap the mic and start your call. I'll transcribe live and fill the lead form as I detect details.",
+      ts: Date.now(),
+    },
   ]);
   const [extracted, setExtracted] = useState<Extracted>({ ...EMPTY });
   const [listening, setListening] = useState(false);
@@ -320,10 +391,12 @@ function Assistant() {
   const lastSentRef = useRef("");
 
   function pushDebug(entry: Omit<DebugEntry, "id" | "ts">) {
-    setDebugLog((prev) => [
-      { id: `dbg-${Date.now()}-${Math.random()}`, ts: Date.now(), ...entry },
-      ...prev,
-    ].slice(0, 40));
+    setDebugLog((prev) =>
+      [{ id: `dbg-${Date.now()}-${Math.random()}`, ts: Date.now(), ...entry }, ...prev].slice(
+        0,
+        40,
+      ),
+    );
   }
 
   function scoreConfidence(obj: Record<string, unknown>) {
@@ -335,20 +408,32 @@ function Assistant() {
     return { filled, total: keys.length, confidence: filled / keys.length };
   }
 
-
   // init recognition
   useEffect(() => {
     const SR =
-      (window as unknown as { SpeechRecognition?: SRConstructor; webkitSpeechRecognition?: SRConstructor })
-        .SpeechRecognition ||
+      (
+        window as unknown as {
+          SpeechRecognition?: SRConstructor;
+          webkitSpeechRecognition?: SRConstructor;
+        }
+      ).SpeechRecognition ||
       (window as unknown as { webkitSpeechRecognition?: SRConstructor }).webkitSpeechRecognition;
-    if (!SR) { setSupported(false); return; }
+    if (!SR) {
+      setSupported(false);
+      return;
+    }
     const rec = new SR();
     rec.continuous = true;
     rec.interimResults = true;
     rec.lang = lang;
     recRef.current = rec;
-    return () => { try { rec.stop(); } catch { /* noop */ } };
+    return () => {
+      try {
+        rec.stop();
+      } catch {
+        /* noop */
+      }
+    };
   }, [lang]);
 
   // AI extraction (debounced) — runs Lovable AI over the FULL conversation
@@ -434,12 +519,20 @@ function Assistant() {
       }
       if (finalText.trim()) {
         const sp = speakerRef.current;
-        const turn: Turn = { id: `t-${Date.now()}-${Math.random()}`, speaker: sp, text: finalText.trim(), ts: Date.now() };
+        const turn: Turn = {
+          id: `t-${Date.now()}-${Math.random()}`,
+          speaker: sp,
+          text: finalText.trim(),
+          ts: Date.now(),
+        };
         setTurns((prev) => {
           const cleaned = prev.filter((p) => !p.interim);
           const next = [...cleaned, turn];
           // 1. Fast local regex pass for instant pre-fill
-          const conv = next.filter((n) => n.speaker !== "ai" && !n.interim).map((n) => n.text).join(" ");
+          const conv = next
+            .filter((n) => n.speaker !== "ai" && !n.interim)
+            .map((n) => n.text)
+            .join(" ");
           const before = extractedRef.current;
           const after = extractFromTranscript(conv, before);
           const changed = diffFields(before, after);
@@ -463,8 +556,14 @@ function Assistant() {
         const sp = speakerRef.current;
         setTurns((prev) => {
           const cleaned = prev.filter((p) => !p.interim);
-          const next = [...cleaned, { id: "interim", speaker: sp, text: interim, ts: Date.now(), interim: true }];
-          const conv = next.filter((n) => n.speaker !== "ai").map((n) => n.text).join(" ");
+          const next = [
+            ...cleaned,
+            { id: "interim", speaker: sp, text: interim, ts: Date.now(), interim: true },
+          ];
+          const conv = next
+            .filter((n) => n.speaker !== "ai")
+            .map((n) => n.text)
+            .join(" ");
           const before = extractedRef.current;
           const after = extractFromTranscript(conv, before);
           const changed = diffFields(before, after);
@@ -486,7 +585,11 @@ function Assistant() {
     };
     rec.onend = () => {
       if (listening) {
-        try { rec.start(); } catch { /* noop */ }
+        try {
+          rec.start();
+        } catch {
+          /* noop */
+        }
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -502,19 +605,32 @@ function Assistant() {
     if (!rec) return;
     setError(null);
     if (listening) {
-      try { rec.stop(); } catch { /* noop */ }
+      try {
+        rec.stop();
+      } catch {
+        /* noop */
+      }
       setListening(false);
     } else {
-      try { rec.start(); setListening(true); } catch (err) {
+      try {
+        rec.start();
+        setListening(true);
+      } catch (err) {
         setError(String(err));
       }
     }
   }
 
   function reset() {
-    try { recRef.current?.stop(); } catch { /* noop */ }
+    try {
+      recRef.current?.stop();
+    } catch {
+      /* noop */
+    }
     setListening(false);
-    setTurns([{ id: "ai-0", speaker: "ai", text: "Cleared. Ready for next call.", ts: Date.now() }]);
+    setTurns([
+      { id: "ai-0", speaker: "ai", text: "Cleared. Ready for next call.", ts: Date.now() },
+    ]);
     setExtracted({ ...EMPTY });
   }
 
@@ -553,7 +669,7 @@ function Assistant() {
       submitted_by_agent: currentUser.id,
     });
     toast.success(
-      `Lead ${lead.lead_id} routed to ${rlmName} · ${lead.priority} · AI Score ${lead.ai_score}/100`
+      `Lead ${lead.lead_id} routed to ${rlmName} · ${lead.priority} · AI Score ${lead.ai_score}/100`,
     );
     reset();
   }
@@ -571,8 +687,10 @@ function Assistant() {
             <div>
               <h2 className="text-sm font-bold text-navy">Live Conversation</h2>
               <p className="text-[11px] text-muted-foreground">
-                Speaking as <strong>{speaker === "client" ? "the Client" : "the Bank Agent"}</strong>
-                {" · "}{lang === "en-US" ? "English" : "Arabic (Jordan)"}
+                Speaking as{" "}
+                <strong>{speaker === "client" ? "the Client" : "the Bank Agent"}</strong>
+                {" · "}
+                {lang === "en-US" ? "English" : "Arabic (Jordan)"}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -609,7 +727,8 @@ function Assistant() {
           <div className="border-t p-3 flex items-center gap-3 bg-card">
             {!supported && (
               <div className="text-[11px] text-red-600 flex-1">
-                Speech recognition is not available in this browser. Use Chrome/Edge for live transcription.
+                Speech recognition is not available in this browser. Use Chrome/Edge for live
+                transcription.
               </div>
             )}
             {supported && (
@@ -640,31 +759,80 @@ function Assistant() {
         <div className="col-span-5 elip-card flex flex-col overflow-hidden">
           <div className="px-4 py-3 border-b bg-card flex items-center justify-between">
             <h2 className="text-sm font-bold text-navy">AI-Extracted Lead</h2>
-            <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${aiThinking ? "bg-primary text-primary-foreground animate-pulse" : "bg-gold text-gold-foreground"}`}>
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded font-bold ${aiThinking ? "bg-primary text-primary-foreground animate-pulse" : "bg-gold text-gold-foreground"}`}
+            >
               {aiThinking ? "AI THINKING…" : "LIVE"}
             </span>
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-3 text-xs">
-            <Field label="Customer Name" value={extracted.customer_name} onChange={(v) => setExtracted({ ...extracted, customer_name: v })} />
-            <Field label="Phone" value={extracted.phone_number} onChange={(v) => setExtracted({ ...extracted, phone_number: v })} />
-            <Field label="Employer / Company" value={extracted.company_name} onChange={(v) => setExtracted({ ...extracted, company_name: v })} />
-            <Field label="Job Title" value={extracted.job_title} onChange={(v) => setExtracted({ ...extracted, job_title: v })} />
+            <Field
+              label="Customer Name"
+              value={extracted.customer_name}
+              onChange={(v) => setExtracted({ ...extracted, customer_name: v })}
+            />
+            <Field
+              label="Phone"
+              value={extracted.phone_number}
+              onChange={(v) => setExtracted({ ...extracted, phone_number: v })}
+            />
+            <Field
+              label="Employer / Company"
+              value={extracted.company_name}
+              onChange={(v) => setExtracted({ ...extracted, company_name: v })}
+            />
+            <Field
+              label="Job Title"
+              value={extracted.job_title}
+              onChange={(v) => setExtracted({ ...extracted, job_title: v })}
+            />
             <div className="grid grid-cols-2 gap-3">
-              <Select label="Product" value={extracted.product} options={PRODUCTS as unknown as string[]} onChange={(v) => setExtracted({ ...extracted, product: v as Product })} />
-              <Select label="Work Duration" value={extracted.work_duration} options={WORK_DURATIONS as unknown as string[]} onChange={(v) => setExtracted({ ...extracted, work_duration: v })} />
+              <Select
+                label="Product"
+                value={extracted.product}
+                options={PRODUCTS as unknown as string[]}
+                onChange={(v) => setExtracted({ ...extracted, product: v as Product })}
+              />
+              <Select
+                label="Work Duration"
+                value={extracted.work_duration}
+                options={WORK_DURATIONS as unknown as string[]}
+                onChange={(v) => setExtracted({ ...extracted, work_duration: v })}
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Financing (JOD)" value={extracted.financing_amount} onChange={(v) => setExtracted({ ...extracted, financing_amount: v })} />
-              <Field label="Net Income (JOD)" value={extracted.net_income_jod} onChange={(v) => setExtracted({ ...extracted, net_income_jod: v })} />
+              <Field
+                label="Financing (JOD)"
+                value={extracted.financing_amount}
+                onChange={(v) => setExtracted({ ...extracted, financing_amount: v })}
+              />
+              <Field
+                label="Net Income (JOD)"
+                value={extracted.net_income_jod}
+                onChange={(v) => setExtracted({ ...extracted, net_income_jod: v })}
+              />
             </div>
-            <Select label="Channel" value={extracted.channel} options={CHANNELS as unknown as string[]} onChange={(v) => setExtracted({ ...extracted, channel: v })} />
+            <Select
+              label="Channel"
+              value={extracted.channel}
+              options={CHANNELS as unknown as string[]}
+              onChange={(v) => setExtracted({ ...extracted, channel: v })}
+            />
 
             <div>
-              <div className="text-[10px] uppercase font-semibold text-zinc-500 mb-1">Auto-generated CC Notes</div>
-              <div className="border rounded bg-zinc-50 p-2 text-[11px] whitespace-pre-wrap max-h-32 overflow-y-auto">
-                {ccNotes || <span className="text-muted-foreground italic">Will populate from the conversation.</span>}
+              <div className="text-[10px] uppercase font-semibold text-zinc-500 mb-1">
+                Auto-generated CC Notes
               </div>
-              <div className="text-[10px] text-right text-muted-foreground mt-0.5">{ccNotes.length} / 500</div>
+              <div className="border rounded bg-zinc-50 p-2 text-[11px] whitespace-pre-wrap max-h-32 overflow-y-auto">
+                {ccNotes || (
+                  <span className="text-muted-foreground italic">
+                    Will populate from the conversation.
+                  </span>
+                )}
+              </div>
+              <div className="text-[10px] text-right text-muted-foreground mt-0.5">
+                {ccNotes.length} / 500
+              </div>
             </div>
           </div>
           <div className="border-t p-3 bg-card">
@@ -689,11 +857,8 @@ function Assistant() {
             className="w-full px-4 py-2 border-b bg-zinc-900 text-zinc-100 flex items-center justify-between text-xs font-mono"
           >
             <span>
-              🐞 LIVE DEBUG · {debugLog.length} event{debugLog.length === 1 ? "" : "s"} ·
-              latest source:{" "}
-              <strong className="text-gold">
-                {debugLog[0]?.source ?? "—"}
-              </strong>
+              🐞 LIVE DEBUG · {debugLog.length} event{debugLog.length === 1 ? "" : "s"} · latest
+              source: <strong className="text-gold">{debugLog[0]?.source ?? "—"}</strong>
               {debugLog[0] && (
                 <>
                   {" · conf "}
@@ -712,7 +877,8 @@ function Assistant() {
             <div className="max-h-[420px] overflow-y-auto divide-y divide-zinc-800 bg-zinc-950 text-zinc-100 font-mono text-[11px]">
               {debugLog.length === 0 && (
                 <div className="p-4 text-zinc-500 italic">
-                  No extraction events yet. Start listening and speak — every regex and AI pass will appear here.
+                  No extraction events yet. Start listening and speak — every regex and AI pass will
+                  appear here.
                 </div>
               )}
               {debugLog.map((d) => {
@@ -721,14 +887,16 @@ function Assistant() {
                   d.source === "ai-error"
                     ? "bg-red-600 text-white"
                     : d.source === "ai"
-                    ? "bg-emerald-600 text-white"
-                    : d.source === "interim"
-                    ? "bg-violet-600 text-white"
-                    : "bg-sky-600 text-white";
+                      ? "bg-emerald-600 text-white"
+                      : d.source === "interim"
+                        ? "bg-violet-600 text-white"
+                        : "bg-sky-600 text-white";
                 return (
                   <div key={d.id} className="p-3 grid grid-cols-12 gap-3">
                     <div className="col-span-2 space-y-1">
-                      <div className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${tone}`}>
+                      <div
+                        className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${tone}`}
+                      >
                         {d.source}
                       </div>
                       <div className="text-zinc-400 text-[10px]">
@@ -739,17 +907,30 @@ function Assistant() {
                       )}
                       <div className="text-[10px]">
                         <span className="text-zinc-400">conf </span>
-                        <span className={pct >= 70 ? "text-emerald-400" : pct >= 40 ? "text-amber-300" : "text-red-400"}>
+                        <span
+                          className={
+                            pct >= 70
+                              ? "text-emerald-400"
+                              : pct >= 40
+                                ? "text-amber-300"
+                                : "text-red-400"
+                          }
+                        >
                           {pct}%
                         </span>
-                        <span className="text-zinc-500"> ({d.filled}/{d.total})</span>
+                        <span className="text-zinc-500">
+                          {" "}
+                          ({d.filled}/{d.total})
+                        </span>
                       </div>
                       {d.changed.length > 0 && (
                         <div className="text-[10px] text-gold">Δ {d.changed.join(", ")}</div>
                       )}
                     </div>
                     <div className="col-span-5">
-                      <div className="text-[10px] uppercase text-zinc-500 mb-1">Transcript sent</div>
+                      <div className="text-[10px] uppercase text-zinc-500 mb-1">
+                        Transcript sent
+                      </div>
                       <pre className="whitespace-pre-wrap break-words text-zinc-200 max-h-40 overflow-y-auto">
                         {d.transcript || "(empty)"}
                       </pre>
@@ -759,9 +940,7 @@ function Assistant() {
                         {d.error ? "Error" : "Raw extracted JSON"}
                       </div>
                       <pre className="whitespace-pre-wrap break-words text-emerald-300 max-h-40 overflow-y-auto">
-                        {d.error
-                          ? d.error
-                          : JSON.stringify(d.raw, null, 2)}
+                        {d.error ? d.error : JSON.stringify(d.raw, null, 2)}
                       </pre>
                     </div>
                   </div>
@@ -804,7 +983,15 @@ function Bubble({ turn }: { turn: Turn }) {
   );
 }
 
-function Field({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function Field({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
   return (
     <div>
       <div className="text-[10px] uppercase font-semibold text-zinc-500 mb-1">{label}</div>
@@ -818,7 +1005,17 @@ function Field({ label, value, onChange }: { label: string; value: string; onCha
   );
 }
 
-function Select({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (v: string) => void }) {
+function Select({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: string[];
+  onChange: (v: string) => void;
+}) {
   return (
     <div>
       <div className="text-[10px] uppercase font-semibold text-zinc-500 mb-1">{label}</div>
@@ -827,7 +1024,11 @@ function Select({ label, value, options, onChange }: { label: string; value: str
         onChange={(e) => onChange(e.target.value)}
         className="w-full border border-zinc-300 rounded px-2 py-1.5 text-sm bg-white"
       >
-        {options.map((o) => <option key={o} value={o}>{o}</option>)}
+        {options.map((o) => (
+          <option key={o} value={o}>
+            {o}
+          </option>
+        ))}
       </select>
     </div>
   );
