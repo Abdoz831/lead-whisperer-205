@@ -124,6 +124,14 @@ export function calcBestTime(company: string): string {
   return "8:30 AM — Before morning meetings, 76% answer rate";
 }
 
+function stableHash(value: string): number {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash * 31 + value.charCodeAt(i)) % 100000;
+  }
+  return hash;
+}
+
 export function calcAIScore(l: Partial<Lead>): { score: number; priority: Priority } {
   let s = 40;
   const amt = l.financing_amount ?? 0;
@@ -137,7 +145,7 @@ export function calcAIScore(l: Partial<Lead>): { score: number; priority: Priori
   if (p && LPW[p] >= 4) s += 15;
   else if (p && LPW[p] >= 2) s += 8;
   if (/وزارة|ministry|government/i.test(l.company_name ?? "")) s += 10;
-  s = Math.min(100, Math.max(10, s + Math.floor(Math.random() * 6)));
+  s = Math.min(100, Math.max(10, s + (stableHash(`${l.customer_name ?? ""}|${l.phone_number ?? ""}|${l.company_name ?? ""}|${l.product ?? ""}|${amt}|${inc}`) % 6)));
   const priority: Priority = s >= 86 ? "P1" : s >= 70 ? "P2" : s >= 50 ? "P3" : "P4";
   return { score: s, priority };
 }
@@ -150,7 +158,7 @@ function mk(partial: Partial<Lead>, idx: number): Lead {
     lead_id: partial.lead_id ?? `L-${String(1000 + idx).padStart(4, "0")}`,
     customer_name: "—",
     customer_cif: "NA",
-    phone_number: "+9627" + Math.floor(10000000 + Math.random() * 89999999),
+    phone_number: "+9627" + String(10000000 + (stableHash(`${partial.customer_name ?? "lead"}-${idx}`) % 90000000)).padStart(8, "0"),
     net_income_jod: 1500,
     company_name: "—",
     product,
@@ -160,7 +168,7 @@ function mk(partial: Partial<Lead>, idx: number): Lead {
     cc_notes: "",
     channel: "Inbound Call",
     submitted_by_agent: "cc-001",
-    submitted_at: new Date(Date.now() - idx * 86400000).toISOString(),
+    submitted_at: new Date(Date.UTC(2026, 5, 10) - idx * 86400000).toISOString(),
     ai_score: score,
     priority,
     lpw_multiplier: LPW[product],
