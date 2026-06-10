@@ -340,7 +340,18 @@ function Assistant() {
           const conv = next.filter((n) => n.speaker !== "ai" && !n.interim).map((n) => n.text).join(" ");
           const before = extractedRef.current;
           const after = extractFromTranscript(conv, before);
-          if (diffFields(before, after).length) setExtracted(after);
+          const changed = diffFields(before, after);
+          if (changed.length) setExtracted(after);
+          const score = scoreConfidence(after as unknown as Record<string, unknown>);
+          pushDebug({
+            source: "regex",
+            transcript: conv,
+            raw: after,
+            confidence: score.confidence,
+            filled: score.filled,
+            total: score.total,
+            changed: changed.map((k) => FIELD_LABELS[k]),
+          });
           // 2. Authoritative AI extraction (debounced)
           scheduleAiExtraction(next);
           return next;
