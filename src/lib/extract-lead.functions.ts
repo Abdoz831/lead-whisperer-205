@@ -49,7 +49,7 @@ export const extractLeadFromTranscript = createServerFn({ method: "POST" })
 
     const gateway = createLovableAiGatewayProvider(key);
     const { object } = await generateObject({
-      model: gateway("google/gemini-3-flash-preview"),
+      model: gateway("google/gemini-3-flash-preview", { structuredOutputs: true }),
       schema: Schema,
       system:
         "You extract structured retail-banking lead data from a transcript of a call between a Bank al Etihad agent and a client. " +
