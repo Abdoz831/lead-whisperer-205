@@ -298,10 +298,10 @@ function Pipeline() {
 
 function Modal({ children, title, onClose }: { children: React.ReactNode; title: string; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-card rounded-lg shadow-xl max-w-lg w-full p-5" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-3 pb-2 border-b">
-          <h3 className="font-bold text-navy">{title}</h3>
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-start justify-center z-50 p-4 overflow-y-auto" onClick={onClose}>
+      <div className="bg-card rounded-lg shadow-xl max-w-md w-full p-4 my-8 max-h-[85vh] overflow-y-auto text-sm" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-2 pb-2 border-b sticky top-0 bg-card">
+          <h3 className="font-bold text-navy text-sm">{title}</h3>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">✕</button>
         </div>
         {children}
