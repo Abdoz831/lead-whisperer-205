@@ -947,8 +947,8 @@ function Assistant() {
       void (async () => {
         await speak(
           langRef.current === "ar-JO"
-            ? "تمام، كل المعلومات اكتملت. رح أرسل الطلب لفريق المبيعات الآن."
-            : "All information is complete. Sending your application to the sales team now.",
+            ? "تمام، كل المعلومات اكتملت. مجموعة الاتحاد يسعدها دعمك في طلبك من خلال شركاتها وفروعها التابعة، وبتقديمك هذا الطلب سيتم الالتزام الكامل بجميع أنظمة الامتثال المصرفي وقوانين حماية البيانات والخصوصية. رح أرسل الطلب لفريق المبيعات الآن."
+            : "All information is complete. Etihad Group is happy to support you with your inquiry through its affiliates and partner companies. By submitting this request, all banking compliance regulations and data privacy acts will be fully complied with. Sending your application to the sales team now.",
         );
         submit();
       })();
