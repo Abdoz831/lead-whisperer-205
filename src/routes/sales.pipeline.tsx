@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader, KPICard, ScoreCircle } from "@/components/elip/UI";
 import { CCNotesPanel } from "@/components/elip/CCNotesPanel";
@@ -20,7 +20,11 @@ function Pipeline() {
   const [showBriefing, setShowBriefing] = useState<Lead | null>(null);
   const [rejectLead, setRejectLead] = useState<Lead | null>(null);
 
-  async function runEnrich(l: Lead) {
+  const enrichingRef = useRef<Set<string>>(new Set());
+
+  async function runEnrich(l: Lead, opts: { silent?: boolean } = {}) {
+    if (enrichingRef.current.has(l.lead_id)) return;
+    enrichingRef.current.add(l.lead_id);
     updateLead(l.lead_id, { enrichment_status: "loading", enrichment_error: "" });
     try {
       const result = await enrichFn({
@@ -35,12 +39,16 @@ function Pipeline() {
         },
       });
       updateLead(l.lead_id, { enrichment: result, enrichment_status: "idle" });
-      setExpanded(l.lead_id);
-      toast.success(`Social intel + sales playbook ready for ${l.customer_name}`);
+      if (!opts.silent) {
+        setExpanded(l.lead_id);
+        toast.success(`Social intel + sales playbook ready for ${l.customer_name}`);
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Failed to enrich lead";
       updateLead(l.lead_id, { enrichment_status: "error", enrichment_error: msg });
-      toast.error(msg);
+      if (!opts.silent) toast.error(msg);
+    } finally {
+      enrichingRef.current.delete(l.lead_id);
     }
   }
 
@@ -48,6 +56,20 @@ function Pipeline() {
     () => leads.filter((l) => !["Queued", "Closed Won", "RLM-Reject", "RLM-Expired"].includes(l.current_status) && l.outcome !== "closed_won"),
     [leads]
   );
+
+  // Auto-enrich any active lead that hasn't been enriched yet — staggered to avoid rate limits.
+  useEffect(() => {
+    const pending = active.filter(
+      (l) => !l.enrichment && l.enrichment_status !== "loading" && l.enrichment_status !== "error" && !enrichingRef.current.has(l.lead_id)
+    );
+    if (pending.length === 0) return;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    pending.slice(0, 6).forEach((l, i) => {
+      timers.push(setTimeout(() => runEnrich(l, { silent: true }), i * 1200));
+    });
+    return () => timers.forEach(clearTimeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active.length]);
 
   const totalActive = active.reduce((s, l) => s + l.financing_amount, 0);
   const closed = leads.filter((l) => l.outcome === "closed_won" || l.current_status === "Approved");
@@ -111,7 +133,7 @@ function Pipeline() {
             <table className="w-full text-xs">
               <thead className="bg-zinc-50 text-zinc-600 text-[11px] uppercase tracking-wider">
                 <tr>
-                  {["", "Customer", "Days", "Product", "RLM", "Deal (JOD)", "Score", "Temp", "Stage", "Blocker", "Social Intel", "Appian", "Actions"].map((h) => (
+                  {["", "Customer", "Days", "Product", "RLM", "Deal (JOD)", "Score", "Temp", "Stage", "Blocker", "Social Intel", "AI Sales Insights", "Appian", "Actions"].map((h) => (
                     <th key={h} className="text-left px-2 py-2 font-semibold whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -179,6 +201,23 @@ function Pipeline() {
                             >🔎 Enrich</button>
                           )}
                         </td>
+                        <td className="px-2 py-2 align-top max-w-[260px]">
+                          {l.enrichment_status === "loading" && !l.enrichment ? (
+                            <span className="text-[10px] text-muted-foreground italic">Writing playbook…</span>
+                          ) : l.enrichment ? (
+                            <button
+                              onClick={() => setExpanded(expanded === l.lead_id ? null : l.lead_id)}
+                              className="text-left"
+                              title={l.enrichment.insights}
+                            >
+                              <div className="text-[10px] font-semibold text-purple-800 mb-0.5">💡 Pitch</div>
+                              <div className="text-[10px] text-zinc-800 line-clamp-3 italic">"{l.enrichment.recommended_pitch}"</div>
+                              <div className="text-[9px] text-purple-700 underline mt-1">View full playbook ↓</div>
+                            </button>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground">—</span>
+                          )}
+                        </td>
                         <td className="px-2 py-2 font-mono text-[11px]">
                           {l.appian_ticket || (l.current_status === "Booked" ? (
                             <button onClick={() => submitAppian(l.lead_id)} className="bg-gold text-gold-foreground px-2 py-1 rounded text-[10px] font-semibold">Submit to Appian →</button>
@@ -192,7 +231,7 @@ function Pipeline() {
                       </tr>
                       {expanded === l.lead_id && (
                         <tr className="bg-zinc-50/50">
-                          <td colSpan={13} className="p-4 space-y-3">
+                          <td colSpan={14} className="p-4 space-y-3">
                             <EnrichmentPanel lead={l} onEnrich={() => runEnrich(l)} />
                             <CCNotesPanel lead={l} />
                             <div className="elip-card p-3">
