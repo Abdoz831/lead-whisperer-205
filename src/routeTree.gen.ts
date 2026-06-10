@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as SalesRecallRouteImport } from './routes/sales.recall'
 import { Route as SalesQueueRouteImport } from './routes/sales.queue'
 import { Route as SalesPipelineRouteImport } from './routes/sales.pipeline'
+import { Route as SalesLedgerRouteImport } from './routes/sales.ledger'
 import { Route as CallCentreSubmissionsRouteImport } from './routes/call-centre.submissions'
 import { Route as CallCentreNewLeadRouteImport } from './routes/call-centre.new-lead'
 
@@ -36,6 +37,11 @@ const SalesPipelineRoute = SalesPipelineRouteImport.update({
   path: '/sales/pipeline',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SalesLedgerRoute = SalesLedgerRouteImport.update({
+  id: '/sales/ledger',
+  path: '/sales/ledger',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CallCentreSubmissionsRoute = CallCentreSubmissionsRouteImport.update({
   id: '/call-centre/submissions',
   path: '/call-centre/submissions',
@@ -51,6 +57,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/call-centre/new-lead': typeof CallCentreNewLeadRoute
   '/call-centre/submissions': typeof CallCentreSubmissionsRoute
+  '/sales/ledger': typeof SalesLedgerRoute
   '/sales/pipeline': typeof SalesPipelineRoute
   '/sales/queue': typeof SalesQueueRoute
   '/sales/recall': typeof SalesRecallRoute
@@ -59,6 +66,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/call-centre/new-lead': typeof CallCentreNewLeadRoute
   '/call-centre/submissions': typeof CallCentreSubmissionsRoute
+  '/sales/ledger': typeof SalesLedgerRoute
   '/sales/pipeline': typeof SalesPipelineRoute
   '/sales/queue': typeof SalesQueueRoute
   '/sales/recall': typeof SalesRecallRoute
@@ -68,6 +76,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/call-centre/new-lead': typeof CallCentreNewLeadRoute
   '/call-centre/submissions': typeof CallCentreSubmissionsRoute
+  '/sales/ledger': typeof SalesLedgerRoute
   '/sales/pipeline': typeof SalesPipelineRoute
   '/sales/queue': typeof SalesQueueRoute
   '/sales/recall': typeof SalesRecallRoute
@@ -78,6 +87,7 @@ export interface FileRouteTypes {
     | '/'
     | '/call-centre/new-lead'
     | '/call-centre/submissions'
+    | '/sales/ledger'
     | '/sales/pipeline'
     | '/sales/queue'
     | '/sales/recall'
@@ -86,6 +96,7 @@ export interface FileRouteTypes {
     | '/'
     | '/call-centre/new-lead'
     | '/call-centre/submissions'
+    | '/sales/ledger'
     | '/sales/pipeline'
     | '/sales/queue'
     | '/sales/recall'
@@ -94,6 +105,7 @@ export interface FileRouteTypes {
     | '/'
     | '/call-centre/new-lead'
     | '/call-centre/submissions'
+    | '/sales/ledger'
     | '/sales/pipeline'
     | '/sales/queue'
     | '/sales/recall'
@@ -103,6 +115,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CallCentreNewLeadRoute: typeof CallCentreNewLeadRoute
   CallCentreSubmissionsRoute: typeof CallCentreSubmissionsRoute
+  SalesLedgerRoute: typeof SalesLedgerRoute
   SalesPipelineRoute: typeof SalesPipelineRoute
   SalesQueueRoute: typeof SalesQueueRoute
   SalesRecallRoute: typeof SalesRecallRoute
@@ -138,6 +151,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SalesPipelineRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sales/ledger': {
+      id: '/sales/ledger'
+      path: '/sales/ledger'
+      fullPath: '/sales/ledger'
+      preLoaderRoute: typeof SalesLedgerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/call-centre/submissions': {
       id: '/call-centre/submissions'
       path: '/call-centre/submissions'
@@ -159,6 +179,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CallCentreNewLeadRoute: CallCentreNewLeadRoute,
   CallCentreSubmissionsRoute: CallCentreSubmissionsRoute,
+  SalesLedgerRoute: SalesLedgerRoute,
   SalesPipelineRoute: SalesPipelineRoute,
   SalesQueueRoute: SalesQueueRoute,
   SalesRecallRoute: SalesRecallRoute,
