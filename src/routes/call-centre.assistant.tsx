@@ -637,12 +637,167 @@ function Assistant() {
     } catch {
       /* noop */
     }
+    try {
+      window.speechSynthesis?.cancel();
+    } catch {
+      /* noop */
+    }
+    autoAskRef.current = false;
+    setAutoAsk(false);
+    lastAskedRef.current = null;
     setListening(false);
     setTurns([
       { id: "ai-0", speaker: "ai", text: "Cleared. Ready for next call.", ts: Date.now() },
     ]);
     setExtracted({ ...EMPTY });
   }
+
+  // ------- Voice follow-up: ask client for any missing required info -------
+  const REQUIRED_ORDER: (keyof Extracted)[] = [
+    "customer_name",
+    "phone_number",
+    "company_name",
+    "job_title",
+    "net_income_jod",
+    "financing_amount",
+  ];
+  const QUESTIONS: Record<string, { en: string; ar: string }> = {
+    customer_name: {
+      en: "May I have your full name, please?",
+      ar: "ممكن تعطيني اسمك الكامل من فضلك؟",
+    },
+    phone_number: {
+      en: "What is the best phone number to reach you on?",
+      ar: "شو أفضل رقم هاتف للتواصل معك؟",
+    },
+    company_name: {
+      en: "Where do you work? What is your employer's name?",
+      ar: "وين بتشتغل؟ شو اسم جهة العمل؟",
+    },
+    job_title: {
+      en: "And what is your job title there?",
+      ar: "وشو المسمى الوظيفي تبعك؟",
+    },
+    net_income_jod: {
+      en: "What is your monthly net income in Jordanian dinars?",
+      ar: "كم دخلك الشهري الصافي بالدينار الأردني؟",
+    },
+    financing_amount: {
+      en: "And how much financing are you looking for, in Jordanian dinars?",
+      ar: "وكم المبلغ اللي بدك تموله، بالدينار الأردني؟",
+    },
+  };
+
+  function nextMissing(ex: Extracted): keyof Extracted | null {
+    for (const k of REQUIRED_ORDER) {
+      const v = (ex as Record<string, string>)[k] ?? "";
+      if (k === "net_income_jod" || k === "financing_amount") {
+        if (!v || isNaN(Number(v)) || Number(v) <= 0) return k;
+      } else {
+        if (!v || v.trim().length < 2) return k;
+      }
+    }
+    return null;
+  }
+
+  async function speak(text: string) {
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+    askingRef.current = true;
+    setSpeaking(true);
+    // Pause the mic to avoid the system hearing its own voice
+    try {
+      recRef.current?.stop();
+    } catch {
+      /* noop */
+    }
+    setTurns((prev) => [
+      ...prev,
+      { id: `ask-${Date.now()}`, speaker: "ai", text: `🔊 ${text}`, ts: Date.now() },
+    ]);
+    await new Promise<void>((resolve) => {
+      try {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = langRef.current;
+        u.rate = 1;
+        u.pitch = 1;
+        u.onend = () => resolve();
+        u.onerror = () => resolve();
+        window.speechSynthesis.speak(u);
+      } catch {
+        resolve();
+      }
+    });
+    askingRef.current = false;
+    setSpeaking(false);
+    // Resume listening so we can hear the client's answer
+    if (autoAskRef.current || listeningRef.current) {
+      try {
+        recRef.current?.start();
+        setListening(true);
+        setSpeaker("client");
+      } catch {
+        /* noop */
+      }
+    }
+  }
+
+  async function askNextMissing() {
+    const miss = nextMissing(extractedRef.current);
+    if (!miss) {
+      autoAskRef.current = false;
+      setAutoAsk(false);
+      lastAskedRef.current = null;
+      await speak(
+        langRef.current === "ar-JO"
+          ? "شكراً، اكتملت كل المعلومات المطلوبة."
+          : "Thank you. I have all the information I need.",
+      );
+      return;
+    }
+    lastAskedRef.current = miss;
+    const q = QUESTIONS[miss];
+    await speak(langRef.current === "ar-JO" ? q.ar : q.en);
+  }
+
+  function startAutoAsk() {
+    autoAskRef.current = true;
+    setAutoAsk(true);
+    setSpeaker("client");
+    void askNextMissing();
+  }
+
+  function stopAutoAsk() {
+    autoAskRef.current = false;
+    setAutoAsk(false);
+    try {
+      window.speechSynthesis?.cancel();
+    } catch {
+      /* noop */
+    }
+    setSpeaking(false);
+    askingRef.current = false;
+  }
+
+  // After extraction updates, if auto-ask is on and we're idle (not speaking,
+  // no AI pass pending), ask the next missing question after a short pause to
+  // let the client finish answering.
+  useEffect(() => {
+    if (!autoAsk) return;
+    if (askingRef.current || aiThinking) return;
+    const miss = nextMissing(extracted);
+    const t = setTimeout(() => {
+      if (!autoAskRef.current) return;
+      if (askingRef.current) return;
+      // If the field they were just asked is now filled, move to next one.
+      // If still empty, re-prompt with the same question.
+      if (miss) void askNextMissing();
+      else void askNextMissing(); // triggers the "thank you" + stops
+    }, 1800);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [extracted, autoAsk, aiThinking]);
+
 
   const ccNotes = useMemo(() => {
     const lines = turns
