@@ -284,11 +284,43 @@ function extractFromTranscript(full: string, prior: Extracted): Extracted {
 
   // Income — "salary 2000", "income 2500", "earn 1800"
   const incomePhrase = firstCapturedPhrase(t, [
-    /(?:salary|income|net\s+income|monthly\s+income|earn(?:ing)?s?|make|راتبي|دخلي)\s*(?:is|:|حوالي)?\s*([\w\u0600-\u06ff\s.,-]{2,40})(?=\s+(?:and|my|i|work|need|want|$)|[.,،]|$)/i,
+    /(?:salary|net\s+salary|net\s+income|monthly\s+(?:income|salary)|earn(?:ing)?s?|i\s+make|راتبي|دخلي)\s*(?:is|:|حوالي)?\s*([\w\u0600-\u06ff\s.,-]{2,40})(?=\s+(?:and|my|i|work|need|want|$)|[.,،]|$)/i,
   ]);
   if (incomePhrase) {
     const parsedIncome = parseMoneyPhrase(incomePhrase);
     if (parsedIncome) out.net_income_jod = parsedIncome;
+  }
+
+  // Other / additional monthly income
+  const otherIncPhrase = firstCapturedPhrase(t, [
+    /(?:additional\s+income|other\s+income|extra\s+income|side\s+income|rental\s+income|rent\s+from|business\s+income|spouse(?:'?s)?\s+(?:salary|income)|freelance|دخل\s+اضافي|دخل\s+إضافي)\s*(?:is|:|of|من|حوالي)?\s*([\w\u0600-\u06ff\s.,-]{2,40})(?=\s+(?:and|my|i|$)|[.,،]|$)/i,
+  ]);
+  if (otherIncPhrase) {
+    const v = parseMoneyPhrase(otherIncPhrase);
+    if (v) out.other_income_jod = v;
+  }
+
+  // Existing obligations / monthly debt
+  const oblPhrase = firstCapturedPhrase(t, [
+    /(?:existing\s+(?:loan|loans|obligations?)|monthly\s+(?:obligation|instal?ments?|payment)|current\s+loan|i\s+(?:already\s+)?(?:have|pay)\s+a?\s*loan|credit\s+card\s+(?:payment|bill)|قسط|أقساط|التزامات)\s*(?:of|is|:|من|حوالي)?\s*([\w\u0600-\u06ff\s.,-]{2,40})(?=\s+(?:and|my|i|$)|[.,،]|$)/i,
+  ]);
+  if (oblPhrase) {
+    const v = parseMoneyPhrase(oblPhrase);
+    if (v) out.existing_obligations_jod = v;
+  }
+
+  // Dependents
+  const depMatch = lower.match(/(\d+|one|two|three|four|five|six|seven)\s+(?:kids|children|dependents|dependants|اطفال|أطفال|اولاد|أولاد)/);
+  if (depMatch) {
+    const n = /^\d+$/.test(depMatch[1]) ? Number(depMatch[1]) : SMALL_NUMBERS[depMatch[1]];
+    if (n != null) out.dependents = String(n);
+  }
+
+  // Years in current job — "I've been there 5 years", "with them for 3 years"
+  const yrsMatch = lower.match(/(?:been\s+(?:there|with\s+them|in\s+this\s+job)|for|since)\s+(\d+(?:\.\d+)?|half\s+a)\s*(?:years?|yrs?|year|سنة|سنوات)/);
+  if (yrsMatch) {
+    const v = yrsMatch[1].startsWith("half") ? "0.5" : yrsMatch[1];
+    out.years_in_current_job = v;
   }
 
   // Product keywords
