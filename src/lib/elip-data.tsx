@@ -84,6 +84,7 @@ export interface Lead {
   customer_name: string;
   customer_cif: string;
   phone_number: string;
+  date_of_birth: string;
   net_income_jod: number;
   company_name: string;
   product: Product;
