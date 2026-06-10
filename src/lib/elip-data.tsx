@@ -144,8 +144,9 @@ export function calcAIScore(l: Partial<Lead>): { score: number; priority: Priori
 
 function mk(partial: Partial<Lead>, idx: number): Lead {
   const product = (partial.product ?? "Mortgage") as Product;
-  const { score, priority } = calcAIScore(partial);
-  return {
+  const merged: Partial<Lead> = { product, financing_amount: 50000, net_income_jod: 1500, ...partial };
+  const { score, priority } = calcAIScore(merged);
+  const base: Lead = {
     lead_id: partial.lead_id ?? `L-${String(1000 + idx).padStart(4, "0")}`,
     customer_name: "—",
     customer_cif: "NA",
@@ -178,12 +179,8 @@ function mk(partial: Partial<Lead>, idx: number): Lead {
     last_update_hours: 4,
     no_answer_attempts: 0,
     next_call_window: "",
-    ...partial,
-    ai_score: score,
-    priority,
-    lpw_multiplier: LPW[product],
-    best_time_to_call: calcBestTime(partial.company_name ?? "—"),
   };
+  return { ...base, ...partial, ai_score: score, priority, lpw_multiplier: LPW[product], best_time_to_call: calcBestTime(partial.company_name ?? "—") };
 }
 
 const seedRaw: Partial<Lead>[] = [
