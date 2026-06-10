@@ -15,6 +15,7 @@ import { Route as SalesQueueRouteImport } from './routes/sales.queue'
 import { Route as SalesPipelineRouteImport } from './routes/sales.pipeline'
 import { Route as SalesLedgerRouteImport } from './routes/sales.ledger'
 import { Route as ManagementWorkloadRouteImport } from './routes/management.workload'
+import { Route as ManagementSalvageRouteImport } from './routes/management.salvage'
 import { Route as ManagementRecallRouteImport } from './routes/management.recall'
 import { Route as ManagementKpiRouteImport } from './routes/management.kpi'
 import { Route as ManagementChurnRouteImport } from './routes/management.churn'
@@ -51,6 +52,11 @@ const ManagementWorkloadRoute = ManagementWorkloadRouteImport.update({
   path: '/management/workload',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ManagementSalvageRoute = ManagementSalvageRouteImport.update({
+  id: '/management/salvage',
+  path: '/management/salvage',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ManagementRecallRoute = ManagementRecallRouteImport.update({
   id: '/management/recall',
   path: '/management/recall',
@@ -84,6 +90,7 @@ export interface FileRoutesByFullPath {
   '/management/churn': typeof ManagementChurnRoute
   '/management/kpi': typeof ManagementKpiRoute
   '/management/recall': typeof ManagementRecallRoute
+  '/management/salvage': typeof ManagementSalvageRoute
   '/management/workload': typeof ManagementWorkloadRoute
   '/sales/ledger': typeof SalesLedgerRoute
   '/sales/pipeline': typeof SalesPipelineRoute
@@ -97,6 +104,7 @@ export interface FileRoutesByTo {
   '/management/churn': typeof ManagementChurnRoute
   '/management/kpi': typeof ManagementKpiRoute
   '/management/recall': typeof ManagementRecallRoute
+  '/management/salvage': typeof ManagementSalvageRoute
   '/management/workload': typeof ManagementWorkloadRoute
   '/sales/ledger': typeof SalesLedgerRoute
   '/sales/pipeline': typeof SalesPipelineRoute
@@ -111,6 +119,7 @@ export interface FileRoutesById {
   '/management/churn': typeof ManagementChurnRoute
   '/management/kpi': typeof ManagementKpiRoute
   '/management/recall': typeof ManagementRecallRoute
+  '/management/salvage': typeof ManagementSalvageRoute
   '/management/workload': typeof ManagementWorkloadRoute
   '/sales/ledger': typeof SalesLedgerRoute
   '/sales/pipeline': typeof SalesPipelineRoute
@@ -126,6 +135,7 @@ export interface FileRouteTypes {
     | '/management/churn'
     | '/management/kpi'
     | '/management/recall'
+    | '/management/salvage'
     | '/management/workload'
     | '/sales/ledger'
     | '/sales/pipeline'
@@ -139,6 +149,7 @@ export interface FileRouteTypes {
     | '/management/churn'
     | '/management/kpi'
     | '/management/recall'
+    | '/management/salvage'
     | '/management/workload'
     | '/sales/ledger'
     | '/sales/pipeline'
@@ -152,6 +163,7 @@ export interface FileRouteTypes {
     | '/management/churn'
     | '/management/kpi'
     | '/management/recall'
+    | '/management/salvage'
     | '/management/workload'
     | '/sales/ledger'
     | '/sales/pipeline'
@@ -166,6 +178,7 @@ export interface RootRouteChildren {
   ManagementChurnRoute: typeof ManagementChurnRoute
   ManagementKpiRoute: typeof ManagementKpiRoute
   ManagementRecallRoute: typeof ManagementRecallRoute
+  ManagementSalvageRoute: typeof ManagementSalvageRoute
   ManagementWorkloadRoute: typeof ManagementWorkloadRoute
   SalesLedgerRoute: typeof SalesLedgerRoute
   SalesPipelineRoute: typeof SalesPipelineRoute
@@ -217,6 +230,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManagementWorkloadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/management/salvage': {
+      id: '/management/salvage'
+      path: '/management/salvage'
+      fullPath: '/management/salvage'
+      preLoaderRoute: typeof ManagementSalvageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/management/recall': {
       id: '/management/recall'
       path: '/management/recall'
@@ -262,6 +282,7 @@ const rootRouteChildren: RootRouteChildren = {
   ManagementChurnRoute: ManagementChurnRoute,
   ManagementKpiRoute: ManagementKpiRoute,
   ManagementRecallRoute: ManagementRecallRoute,
+  ManagementSalvageRoute: ManagementSalvageRoute,
   ManagementWorkloadRoute: ManagementWorkloadRoute,
   SalesLedgerRoute: SalesLedgerRoute,
   SalesPipelineRoute: SalesPipelineRoute,
