@@ -360,7 +360,12 @@ function diffFields(prev: Extracted, next: Extracted): (keyof Extracted)[] {
 const FIELD_LABELS: Record<keyof Extracted, string> = {
   customer_name: "Customer Name",
   phone_number: "Phone",
-  net_income_jod: "Net Income (JOD)",
+  net_income_jod: "Salary (JOD)",
+  other_income_jod: "Other Income (JOD)",
+  existing_obligations_jod: "Existing Obligations (JOD)",
+  years_in_current_job: "Years in Job",
+  dependents: "Dependents",
+  financial_notes: "Financial Notes",
   company_name: "Employer",
   product: "Product",
   financing_amount: "Amount (JOD)",
