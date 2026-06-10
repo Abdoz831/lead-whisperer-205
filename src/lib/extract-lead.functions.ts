@@ -60,7 +60,8 @@ export const extractLeadFromTranscript = createServerFn({ method: "POST" })
       system:
         "You extract structured retail-banking lead data from a transcript of a call between a Bank al Etihad agent and a client. " +
         "The transcript may mix English and Jordanian Arabic / any spoken dialect. Read carefully — clients often state details in passing. " +
-        "Extract every field you can confidently infer (name, phone in any country format, employer/government body, job title, product type, amount, tenure). " +
+        "Extract every field you can confidently infer: name, phone (any country format), employer/government body, job title, product type, requested financing amount, work tenure bucket, AND the client's full financial picture. " +
+        "Financial picture means: monthly SALARY (net_income_jod), any OTHER monthly income such as rental/business/freelance/spouse (other_income_jod), existing monthly debt obligations / loan instalments / credit card payments (existing_obligations_jod), years at current job (years_in_current_job, decimal), number of dependents (dependents), and a free-text financial_notes summarising anything else relevant to underwriting (owns property, has savings, has accounts at other banks, prior loan history, side business, recent rejection, etc.). " +
         "For phrases like 'working as a Secretary General of Global AI Award in Dubai Quality Group', job_title is 'Secretary General' and company_name is 'Global AI Award in Dubai Quality Group'. " +
         "Leave optional string fields as an empty string if truly not stated. Never invent values. " +
         "Convert spoken numbers (e.g. 'twenty thousand dollars' → 20000, 'one hundred and twenty thousand dinars' → 120000) to bare integers.",
