@@ -43,6 +43,11 @@ type Extracted = {
   customer_name: string;
   phone_number: string;
   net_income_jod: string;
+  other_income_jod: string;
+  existing_obligations_jod: string;
+  years_in_current_job: string;
+  dependents: string;
+  financial_notes: string;
   company_name: string;
   product: Product;
   financing_amount: string;
@@ -69,6 +74,11 @@ const EMPTY: Extracted = {
   customer_name: "",
   phone_number: "",
   net_income_jod: "",
+  other_income_jod: "",
+  existing_obligations_jod: "",
+  years_in_current_job: "",
+  dependents: "",
+  financial_notes: "",
   company_name: "",
   product: "Personal Loan",
   financing_amount: "",
