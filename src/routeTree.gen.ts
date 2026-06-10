@@ -17,6 +17,7 @@ import { Route as SalesLedgerRouteImport } from './routes/sales.ledger'
 import { Route as ManagementWorkloadRouteImport } from './routes/management.workload'
 import { Route as ManagementSalvageRouteImport } from './routes/management.salvage'
 import { Route as ManagementRecallRouteImport } from './routes/management.recall'
+import { Route as ManagementReactivationRouteImport } from './routes/management.reactivation'
 import { Route as ManagementKpiRouteImport } from './routes/management.kpi'
 import { Route as ManagementChurnRouteImport } from './routes/management.churn'
 import { Route as CallCentreSubmissionsRouteImport } from './routes/call-centre.submissions'
@@ -62,6 +63,11 @@ const ManagementRecallRoute = ManagementRecallRouteImport.update({
   path: '/management/recall',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ManagementReactivationRoute = ManagementReactivationRouteImport.update({
+  id: '/management/reactivation',
+  path: '/management/reactivation',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ManagementKpiRoute = ManagementKpiRouteImport.update({
   id: '/management/kpi',
   path: '/management/kpi',
@@ -89,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/call-centre/submissions': typeof CallCentreSubmissionsRoute
   '/management/churn': typeof ManagementChurnRoute
   '/management/kpi': typeof ManagementKpiRoute
+  '/management/reactivation': typeof ManagementReactivationRoute
   '/management/recall': typeof ManagementRecallRoute
   '/management/salvage': typeof ManagementSalvageRoute
   '/management/workload': typeof ManagementWorkloadRoute
@@ -103,6 +110,7 @@ export interface FileRoutesByTo {
   '/call-centre/submissions': typeof CallCentreSubmissionsRoute
   '/management/churn': typeof ManagementChurnRoute
   '/management/kpi': typeof ManagementKpiRoute
+  '/management/reactivation': typeof ManagementReactivationRoute
   '/management/recall': typeof ManagementRecallRoute
   '/management/salvage': typeof ManagementSalvageRoute
   '/management/workload': typeof ManagementWorkloadRoute
@@ -118,6 +126,7 @@ export interface FileRoutesById {
   '/call-centre/submissions': typeof CallCentreSubmissionsRoute
   '/management/churn': typeof ManagementChurnRoute
   '/management/kpi': typeof ManagementKpiRoute
+  '/management/reactivation': typeof ManagementReactivationRoute
   '/management/recall': typeof ManagementRecallRoute
   '/management/salvage': typeof ManagementSalvageRoute
   '/management/workload': typeof ManagementWorkloadRoute
@@ -134,6 +143,7 @@ export interface FileRouteTypes {
     | '/call-centre/submissions'
     | '/management/churn'
     | '/management/kpi'
+    | '/management/reactivation'
     | '/management/recall'
     | '/management/salvage'
     | '/management/workload'
@@ -148,6 +158,7 @@ export interface FileRouteTypes {
     | '/call-centre/submissions'
     | '/management/churn'
     | '/management/kpi'
+    | '/management/reactivation'
     | '/management/recall'
     | '/management/salvage'
     | '/management/workload'
@@ -162,6 +173,7 @@ export interface FileRouteTypes {
     | '/call-centre/submissions'
     | '/management/churn'
     | '/management/kpi'
+    | '/management/reactivation'
     | '/management/recall'
     | '/management/salvage'
     | '/management/workload'
@@ -177,6 +189,7 @@ export interface RootRouteChildren {
   CallCentreSubmissionsRoute: typeof CallCentreSubmissionsRoute
   ManagementChurnRoute: typeof ManagementChurnRoute
   ManagementKpiRoute: typeof ManagementKpiRoute
+  ManagementReactivationRoute: typeof ManagementReactivationRoute
   ManagementRecallRoute: typeof ManagementRecallRoute
   ManagementSalvageRoute: typeof ManagementSalvageRoute
   ManagementWorkloadRoute: typeof ManagementWorkloadRoute
@@ -244,6 +257,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManagementRecallRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/management/reactivation': {
+      id: '/management/reactivation'
+      path: '/management/reactivation'
+      fullPath: '/management/reactivation'
+      preLoaderRoute: typeof ManagementReactivationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/management/kpi': {
       id: '/management/kpi'
       path: '/management/kpi'
@@ -281,6 +301,7 @@ const rootRouteChildren: RootRouteChildren = {
   CallCentreSubmissionsRoute: CallCentreSubmissionsRoute,
   ManagementChurnRoute: ManagementChurnRoute,
   ManagementKpiRoute: ManagementKpiRoute,
+  ManagementReactivationRoute: ManagementReactivationRoute,
   ManagementRecallRoute: ManagementRecallRoute,
   ManagementSalvageRoute: ManagementSalvageRoute,
   ManagementWorkloadRoute: ManagementWorkloadRoute,
