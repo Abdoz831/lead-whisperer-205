@@ -97,6 +97,93 @@ function titleCase(value: string) {
   return cleanPhrase(value).replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+function normalizeDigits(value: string) {
+  return value.replace(/[٠-٩۰-۹]/g, (d) => String("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹".indexOf(d) % 10));
+}
+
+const SMALL_NUMBERS: Record<string, number> = {
+  zero: 0, oh: 0, o: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9,
+  ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19,
+  twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90,
+  صفر: 0, واحد: 1, واحدة: 1, اثنين: 2, اتنين: 2, ثلاثة: 3, تلاتة: 3, اربعة: 4, أربعة: 4, خمسة: 5, ستة: 6, سبعة: 7, ثمانية: 8, تسعة: 9,
+};
+
+function spokenNumberToNumber(value: string) {
+  const tokens = normalizeDigits(value)
+    .toLowerCase()
+    .replace(/-/g, " ")
+    .match(/[a-z\u0600-\u06ff]+|\d+(?:\.\d+)?/g);
+  if (!tokens?.length) return null;
+
+  let total = 0;
+  let current = 0;
+  let sawNumber = false;
+  for (const token of tokens) {
+    if (/^\d/.test(token)) {
+      current += Number(token);
+      sawNumber = true;
+    } else if (token in SMALL_NUMBERS) {
+      current += SMALL_NUMBERS[token];
+      sawNumber = true;
+    } else if (["hundred", "مئة", "مية"].includes(token)) {
+      current = Math.max(current, 1) * 100;
+      sawNumber = true;
+    } else if (["thousand", "k", "الف", "ألف"].includes(token)) {
+      total += Math.max(current, 1) * 1000;
+      current = 0;
+      sawNumber = true;
+    } else if (["million", "مليون"].includes(token)) {
+      total += Math.max(current, 1) * 1_000_000;
+      current = 0;
+      sawNumber = true;
+    }
+  }
+  return sawNumber ? Math.round(total + current) : null;
+}
+
+function parseMoneyPhrase(value: string) {
+  const text = normalizeDigits(value).replace(/,/g, " ");
+  const numeric = text.match(/(\d+(?:\.\d+)?)\s*(k|thousand|الف|ألف|million|مليون)?/i);
+  if (numeric) {
+    const base = Number(numeric[1]);
+    const scale = numeric[2]?.toLowerCase();
+    if (scale && ["k", "thousand", "الف", "ألف"].includes(scale)) return String(Math.round(base * 1000));
+    if (scale && ["million", "مليون"].includes(scale)) return String(Math.round(base * 1_000_000));
+    return String(Math.round(base));
+  }
+  const spoken = spokenNumberToNumber(text);
+  return spoken && spoken > 0 ? String(spoken) : "";
+}
+
+function parsePhonePhrase(value: string) {
+  const text = normalizeDigits(value).toLowerCase().replace(/-/g, " ");
+  const compactDigits = text.replace(/[^+\d]/g, "");
+  if (compactDigits.replace(/\D/g, "").length >= 7) return normalizePhone(compactDigits);
+
+  const tokens = text.match(/plus|double|triple|zero|oh|o|one|two|three|four|five|six|seven|eight|nine|[٠-٩۰-۹\d]|صفر|واحد|واحدة|اثنين|اتنين|ثلاثة|تلاتة|اربعة|أربعة|خمسة|ستة|سبعة|ثمانية|تسعة/g) ?? [];
+  let out = "";
+  let repeat = 1;
+  for (const token of tokens) {
+    if (token === "plus") { out = "+"; continue; }
+    if (token === "double") { repeat = 2; continue; }
+    if (token === "triple") { repeat = 3; continue; }
+    const digit = /^\d$/.test(token) ? token : SMALL_NUMBERS[token]?.toString();
+    if (digit !== undefined) {
+      out += digit.repeat(repeat);
+      repeat = 1;
+    }
+  }
+  return out.replace(/\D/g, "").length >= 7 ? normalizePhone(out) : "";
+}
+
+function firstCapturedPhrase(text: string, patterns: RegExp[]) {
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match?.[1]) return cleanPhrase(match[1]);
+  }
+  return "";
+}
+
 function extractFromTranscript(full: string, prior: Extracted): Extracted {
   const t = full.replace(/\s+/g, " ").trim();
   const lower = t.toLowerCase();
