@@ -334,8 +334,87 @@ function SalesDashboard() {
         </div>
 
 
+        {/* Processed Ledger — immutable closed outcomes */}
+        <div className="elip-card overflow-hidden">
+          <div className="px-4 py-3 border-b bg-emerald-50 flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-navy text-sm">📒 Processed Ledger</h3>
+              <p className="text-[11px] text-muted-foreground">
+                Immutable record of all closed outcomes — wins, rejects and expired. No edits permitted.
+              </p>
+            </div>
+            <span className="text-xs font-semibold bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded">
+              {ledger.length}
+            </span>
+          </div>
+          <div className="max-h-96 overflow-y-auto">
+            <table className="w-full text-xs">
+              <thead className="bg-zinc-50 text-zinc-600 text-[10px] uppercase tracking-wider sticky top-0">
+                <tr>
+                  <th className="text-left px-3 py-2 font-semibold">Lead ID</th>
+                  <th className="text-left px-3 py-2 font-semibold">Customer</th>
+                  <th className="text-left px-3 py-2 font-semibold">Product</th>
+                  <th className="text-left px-3 py-2 font-semibold">Deal (JOD)</th>
+                  <th className="text-left px-3 py-2 font-semibold">RLM</th>
+                  <th className="text-left px-3 py-2 font-semibold">Outcome</th>
+                  <th className="text-left px-3 py-2 font-semibold">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ledger.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="text-center p-6 text-muted-foreground text-xs">
+                      No processed outcomes yet.
+                    </td>
+                  </tr>
+                )}
+                {ledger.map((l) => {
+                  const outcomeLabel =
+                    l.outcome === "closed_won" ||
+                    l.current_status === "Closed Won" ||
+                    l.current_status === "Approved"
+                      ? "Closed Won"
+                      : l.current_status === "RLM-Reject"
+                        ? l.affiliate_redirect
+                          ? "Redirected to Group"
+                          : "RLM-Reject"
+                        : l.current_status === "RLM-Expired"
+                          ? "Expired-Unrecovered"
+                          : l.current_status;
+                  const tone = outcomeLabel.includes("Closed")
+                    ? "bg-green-100 text-green-900"
+                    : outcomeLabel === "Redirected to Group"
+                      ? "bg-blue-100 text-blue-900"
+                      : outcomeLabel.includes("Expired")
+                        ? "bg-zinc-200 text-zinc-700"
+                        : "bg-red-100 text-red-900";
+                  return (
+                    <tr key={l.lead_id} className="border-t hover:bg-zinc-50">
+                      <td className="px-3 py-2 font-mono text-[10px]">{l.lead_id}</td>
+                      <td className="px-3 py-2 font-semibold text-navy">{l.customer_name}</td>
+                      <td className="px-3 py-2 text-[11px]">{l.product}</td>
+                      <td className="px-3 py-2 tabular-nums text-[11px]">
+                        {l.financing_amount.toLocaleString()}
+                      </td>
+                      <td className="px-3 py-2 text-[11px]">{rlmName(l.assigned_rlm)}</td>
+                      <td className="px-3 py-2">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${tone}`}>
+                          {outcomeLabel}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-muted-foreground text-[11px] tabular-nums">
+                        {new Date(l.submitted_at).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
         <div className="flex gap-3 text-xs">
+
           <Link
             to="/sales/queue"
             className="bg-navy text-navy-foreground px-3 py-2 rounded font-semibold"
