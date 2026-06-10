@@ -194,6 +194,51 @@ function Assistant() {
     return () => { try { rec.stop(); } catch { /* noop */ } };
   }, [lang]);
 
+  // AI extraction (debounced) — runs Lovable AI over the FULL conversation
+  function scheduleAiExtraction(allTurns: Turn[]) {
+    if (aiTimerRef.current) clearTimeout(aiTimerRef.current);
+    aiTimerRef.current = setTimeout(async () => {
+      const transcript = allTurns
+        .filter((t) => t.speaker !== "ai" && !t.interim)
+        .map((t) => `${t.speaker === "client" ? "Client" : "Agent"}: ${t.text}`)
+        .join("\n");
+      if (!transcript.trim() || transcript === lastSentRef.current) return;
+      lastSentRef.current = transcript;
+      const seq = ++aiSeqRef.current;
+      setAiThinking(true);
+      try {
+        const result = await extractFn({ data: { transcript } });
+        if (seq !== aiSeqRef.current) return;
+        const before = extractedRef.current;
+        // Merge: AI wins for non-empty values; never blank an existing value
+        const merged: Extracted = { ...before };
+        (Object.keys(result) as (keyof Extracted)[]).forEach((k) => {
+          const v = (result as Extracted)[k];
+          if (typeof v === "string" && v.trim()) {
+            (merged as Record<keyof Extracted, string>)[k] = v as string;
+          }
+        });
+        const changed = diffFields(before, merged);
+        if (changed.length) {
+          setExtracted(merged);
+          setTurns((prev) => [
+            ...prev,
+            {
+              id: `ai-${Date.now()}`,
+              speaker: "ai",
+              text: `🤖 AI updated: ${changed.map((k) => `${FIELD_LABELS[k]} → ${String(merged[k])}`).join(" · ")}`,
+              ts: Date.now(),
+            },
+          ]);
+        }
+      } catch (err) {
+        console.error("AI extraction failed", err);
+      } finally {
+        if (seq === aiSeqRef.current) setAiThinking(false);
+      }
+    }, 1200);
+  }
+
   // attach handlers
   useEffect(() => {
     const rec = recRef.current;
@@ -213,20 +258,13 @@ function Assistant() {
         setTurns((prev) => {
           const cleaned = prev.filter((p) => !p.interim);
           const next = [...cleaned, turn];
-          // run extraction on full client transcript so far
-          const clientFull = next.filter((n) => n.speaker === "client").map((n) => n.text).join(" ");
+          // 1. Fast local regex pass for instant pre-fill
+          const conv = next.filter((n) => n.speaker !== "ai" && !n.interim).map((n) => n.text).join(" ");
           const before = extractedRef.current;
-          const after = extractFromTranscript(clientFull, before);
-          const changed = diffFields(before, after);
-          if (changed.length) {
-            setExtracted(after);
-            next.push({
-              id: `ai-${Date.now()}`,
-              speaker: "ai",
-              text: `Detected: ${changed.map((k) => `${FIELD_LABELS[k]} → ${String(after[k])}`).join(" · ")}`,
-              ts: Date.now(),
-            });
-          }
+          const after = extractFromTranscript(conv, before);
+          if (diffFields(before, after).length) setExtracted(after);
+          // 2. Authoritative AI extraction (debounced)
+          scheduleAiExtraction(next);
           return next;
         });
       }
@@ -247,6 +285,7 @@ function Assistant() {
         try { rec.start(); } catch { /* noop */ }
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listening]);
 
   // auto scroll
