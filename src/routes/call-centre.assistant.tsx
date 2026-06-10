@@ -245,7 +245,7 @@ function extractFromTranscript(full: string, prior: Extracted): Extracted {
   }
 
   // Company / employer — "I work at X", "work for X", "employed by X", "ministry of X"
-  const roleOfCompany = t.match(/(?:work(?:ing)?\s+as|position\s+is|job\s+(?:title\s+)?is|i'?m\s+(?:a|an)?|i\s+am\s+(?:a|an)?)\s*([a-z][a-z -]{2,45}?)\s+(?:of|at|for|with)\s+([A-Za-z][\w&.- ]{2,90}?)(?:\.|,| and | my | salary | income | need | want |$)/i);
+  const roleOfCompany = t.match(/(?:work(?:ing)?\s+as|position\s+is|job\s+(?:title\s+)?is|i'?m\s+(?:a|an)?|i\s+am\s+(?:a|an)?)\s*([a-z][a-z -]{2,45}?)\s+(?:of|at|for|with)\s+([A-Za-z][\w&. -]{2,90}?)(?:\.|,| and | my | salary | income | need | want |$)/i);
   const co =
     roleOfCompany ||
     t.match(/(?:i\s+work\s+(?:at|for|in)|i'?m\s+working\s+(?:at|for|in)|employed\s+(?:by|at)|company\s+is|employer\s+is|اعمل\s+(?:في|لدى)|أعمل\s+(?:في|لدى))\s+([A-Za-z\u0600-\u06ff][\w\u0600-\u06ff&.\- ]{2,90}?)(?:\.|,|،| and | as | for | with | my | salary | income | need | want |$)/i) ||
