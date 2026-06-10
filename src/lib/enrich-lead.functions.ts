@@ -11,6 +11,9 @@ const Input = z.object({
   financing_amount: z.number().optional().default(0),
   net_income_jod: z.number().optional().default(0),
   cc_notes: z.string().max(4000).optional().default(""),
+  date_of_birth: z.string().max(20).optional().default(""),
+  phone_number: z.string().max(40).optional().default(""),
+  work_duration: z.string().max(40).optional().default(""),
 });
 
 const OutSchema = z.object({
