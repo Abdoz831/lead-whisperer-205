@@ -273,6 +273,15 @@ function extractFromTranscript(full: string, prior: Extracted): Extracted {
     if (parsedPhone) out.phone_number = parsedPhone;
   }
 
+  // Date of birth — "born on 15 March 1988", "DOB 1988-03-15", "date of birth is 15/03/1988"
+  const dobMatch = t.match(
+    /(?:born\s+(?:on|in)?|date\s+of\s+birth\s*(?:is|:)?|dob\s*(?:is|:)?|d\.o\.b\.?\s*(?:is|:)?|تاريخ\s+(?:الميلاد|ميلادي)\s*(?:هو)?)\s*([0-9]{1,2}[\/\-\. ][0-9]{1,2}[\/\-\. ][0-9]{2,4}|[0-9]{4}[\/\-][0-9]{1,2}[\/\-][0-9]{1,2}|[0-9]{1,2}\s+(?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)\w*\s+[0-9]{2,4})/i,
+  );
+  if (dobMatch) {
+    const iso = parseDob(dobMatch[1]);
+    if (iso) out.date_of_birth = iso;
+  }
+
   // Financing amount — "JOD 120,000", "120 thousand dinars", "one hundred twenty thousand", Arabic amount phrases
   const amountPhrase = firstCapturedPhrase(t, [
     /(?:need|want|looking\s+for|loan\s+of|amount\s+is|financing\s+amount\s+is|request(?:ing)?|بدي|اريد|أريد|محتاج)\s+([\w\u0600-\u06ff\s.,-]{2,60}?)(?:\s*(?:jod|jd|dinar|dinars|دينار))?(?=\s+(?:for|to buy|because|and my|my salary|salary|income|from|$)|[.,،]|$)/i,
