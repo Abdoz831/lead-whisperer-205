@@ -1056,6 +1056,11 @@ function Assistant() {
               onChange={(v) => setExtracted({ ...extracted, phone_number: v })}
             />
             <Field
+              label="Date of Birth (YYYY-MM-DD)"
+              value={extracted.date_of_birth}
+              onChange={(v) => setExtracted({ ...extracted, date_of_birth: v })}
+            />
+            <Field
               label="Employer / Company"
               value={extracted.company_name}
               onChange={(v) => setExtracted({ ...extracted, company_name: v })}
