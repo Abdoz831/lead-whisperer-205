@@ -1,20 +1,34 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { ElipProvider, useElip, type Role } from "@/lib/elip-data";
 import { Toaster } from "@/components/ui/sonner";
+import {
+  Headphones,
+  Briefcase,
+  BarChart3,
+  Sparkles,
+  type LucideIcon,
+} from "lucide-react";
 
-const sections = [
+type Section = {
+  label: string;
+  Icon: LucideIcon;
+  roles: Role[];
+  links: { to: string; label: string }[];
+};
+
+const sections: Section[] = [
   {
     label: "CALL CENTRE",
-    icon: "📞",
-    roles: ["cc"] as Role[],
+    Icon: Headphones,
+    roles: ["cc"],
     links: [
       { to: "/call-centre/assistant", label: "AI Call Assistant" },
     ],
   },
   {
     label: "SALES PIPELINE",
-    icon: "💼",
-    roles: ["rlm"] as Role[],
+    Icon: Briefcase,
+    roles: ["rlm"],
     links: [
       { to: "/sales/queue", label: "Leads Queue" },
       { to: "/sales/pipeline", label: "Active Pipeline" },
@@ -24,8 +38,8 @@ const sections = [
   },
   {
     label: "MANAGEMENT",
-    icon: "📊",
-    roles: ["tl"] as Role[],
+    Icon: BarChart3,
+    roles: ["tl"],
     links: [
       { to: "/management/kpi", label: "KPI Dashboard" },
       { to: "/management/workload", label: "Workload Monitor" },
@@ -37,15 +51,18 @@ const sections = [
   },
 ];
 
+
 function Sidebar() {
   const { role, setRole, currentUser } = useElip();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (
-    <aside className="w-64 shrink-0 bg-navy text-navy-foreground flex flex-col">
+      <aside className="w-64 shrink-0 bg-navy text-navy-foreground flex flex-col">
       <div className="px-5 py-5 border-b border-white/10">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">🏦</span>
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-md bg-primary flex items-center justify-center shadow-sm">
+            <Sparkles className="w-5 h-5 text-primary-foreground" strokeWidth={2.25} />
+          </div>
           <div>
             <div className="font-bold tracking-tight text-base leading-tight">ELIP 2026</div>
             <div className="text-[11px] text-white/60 leading-tight">Etihad Lead Intelligence Platform</div>
@@ -53,12 +70,14 @@ function Sidebar() {
         </div>
       </div>
 
+
       <nav className="flex-1 overflow-y-auto py-3 text-sm">
         {sections.map((s) => (
           <div key={s.label} className="mb-4">
             <div className="px-5 py-1 text-[11px] font-semibold tracking-wider text-white/50 flex items-center gap-2">
-              <span>{s.icon}</span> {s.label}
+              <s.Icon className="w-3.5 h-3.5" strokeWidth={2.25} /> {s.label}
             </div>
+
             {s.links.map((l) => {
               const active = pathname === l.to;
               return (
