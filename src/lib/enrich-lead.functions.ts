@@ -11,6 +11,9 @@ const Input = z.object({
   financing_amount: z.number().optional().default(0),
   net_income_jod: z.number().optional().default(0),
   cc_notes: z.string().max(4000).optional().default(""),
+  date_of_birth: z.string().max(20).optional().default(""),
+  phone_number: z.string().max(40).optional().default(""),
+  work_duration: z.string().max(40).optional().default(""),
 });
 
 const OutSchema = z.object({
@@ -58,18 +61,28 @@ export const enrichLead = createServerFn({ method: "POST" })
     if (!lovableKey) throw new Error("Missing LOVABLE_API_KEY");
     if (!tavilyKey) throw new Error("Missing TAVILY_API_KEY");
 
-    // Run a couple of targeted social/web searches in parallel.
-    const baseQ = data.company_name
-      ? `${data.customer_name} ${data.company_name} Jordan`
-      : `${data.customer_name} Jordan`;
-    const [generalHits, linkedinHits] = await Promise.all([
-      tavilySearch(baseQ, tavilyKey),
-      tavilySearch(`${data.customer_name} ${data.company_name || ""} site:linkedin.com`, tavilyKey),
-    ]);
+    // Build several targeted queries combining every piece of initial info we have
+    // so Tavily can distinguish the right person from common-name matches.
+    const birthYear = data.date_of_birth?.match(/^(\d{4})/)?.[1] ?? "";
+    const ageHint = birthYear ? `born ${birthYear}` : "";
+    const titleAndCompany = [data.job_title, data.company_name].filter(Boolean).join(" ");
 
-    const merged = [...linkedinHits, ...generalHits].slice(0, 10);
-    const sources = merged.map((r) => ({ title: r.title, url: r.url }));
-    const evidence = merged
+    const queries = [
+      // 1. Strongest combined query
+      [data.customer_name, data.job_title, data.company_name, ageHint, "Jordan"].filter(Boolean).join(" "),
+      // 2. LinkedIn-focused with company
+      `${data.customer_name} ${data.company_name || ""} site:linkedin.com`.trim(),
+      // 3. LinkedIn-focused with title
+      data.job_title ? `${data.customer_name} ${data.job_title} site:linkedin.com` : "",
+      // 4. Company press / news mentions
+      data.company_name ? `"${data.customer_name}" "${data.company_name}"` : "",
+    ].filter((q) => q.length > 3);
+
+    const searchResults = await Promise.all(queries.map((q) => tavilySearch(q, tavilyKey)));
+    const merged = searchResults.flat();
+    const dedup = Array.from(new Map(merged.map((r) => [r.url, r])).values()).slice(0, 12);
+    const sources = dedup.map((r) => ({ title: r.title, url: r.url }));
+    const evidence = dedup
       .map((r, i) => `[${i + 1}] ${r.title}\n${r.url}\n${(r.content || "").slice(0, 600)}`)
       .join("\n\n");
 
@@ -82,18 +95,23 @@ export const enrichLead = createServerFn({ method: "POST" })
         "You are a world-class retail-banking sales coach for Bank al Etihad in Jordan. " +
         "You receive (a) basic CRM facts about a prospect and (b) raw public/social-media search snippets about them. " +
         "Your job: build a sharp profile and a sales playbook the RLM can use on the very next call. " +
-        "Be honest — if the snippets clearly are NOT this person (common name, different country, no match), set confidence='low' and say the public footprint is unclear; do NOT fabricate biography. " +
-        "Tailor talking points to the client's company, seniority and the specific product/amount. Use a respectful Jordanian business tone. Keep everything actionable, concrete, no fluff.",
+        "MATCHING RULES — be strict: a snippet only matches the CRM person if name + (company OR job title OR location 'Jordan' OR birth year) line up. " +
+        "If matches are weak or ambiguous (common name, different country, different employer, age mismatch), set confidence='low' and explicitly say the public footprint is unclear; do NOT fabricate biography. " +
+        "Tailor talking points to the client's company, seniority, life stage (age from DOB) and the specific product/amount. Use a respectful Jordanian business tone. Keep everything actionable, concrete, no fluff.",
       prompt:
-        `CRM FACTS:\n` +
+        `CRM FACTS (use ALL of these to match the right person):\n` +
         `- Name: ${data.customer_name}\n` +
+        `- Date of birth: ${data.date_of_birth || "(unknown)"}\n` +
+        `- Phone: ${data.phone_number || "(unknown)"}\n` +
         `- Company: ${data.company_name || "(unknown)"}\n` +
         `- Job title: ${data.job_title || "(unknown)"}\n` +
+        `- Work tenure: ${data.work_duration || "(unknown)"}\n` +
+        `- Title+Company combined: ${titleAndCompany || "(unknown)"}\n` +
         `- Product interest: ${data.product || "(unknown)"}\n` +
         `- Requested amount: JOD ${data.financing_amount || 0}\n` +
         `- Monthly income: JOD ${data.net_income_jod || 0}\n` +
         `- Contact-centre notes: ${data.cc_notes || "(none)"}\n\n` +
-        `PUBLIC/SOCIAL SEARCH RESULTS:\n${evidence || "(no results returned by web search)"}\n`,
+        `PUBLIC/SOCIAL SEARCH RESULTS (Jordan-targeted, Tavily over LinkedIn/Twitter/news):\n${evidence || "(no results returned by web search)"}\n`,
     });
 
     return {

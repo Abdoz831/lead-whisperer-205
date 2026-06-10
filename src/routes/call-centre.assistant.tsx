@@ -42,6 +42,7 @@ type Turn = {
 type Extracted = {
   customer_name: string;
   phone_number: string;
+  date_of_birth: string;
   net_income_jod: string;
   other_income_jod: string;
   existing_obligations_jod: string;
@@ -73,6 +74,7 @@ type DebugEntry = {
 const EMPTY: Extracted = {
   customer_name: "",
   phone_number: "",
+  date_of_birth: "",
   net_income_jod: "",
   other_income_jod: "",
   existing_obligations_jod: "",
@@ -246,6 +248,20 @@ function firstCapturedPhrase(text: string, patterns: RegExp[]) {
   return "";
 }
 
+function parseDob(raw: string): string {
+  const months: Record<string, number> = { jan: 1, january: 1, feb: 2, february: 2, mar: 3, march: 3, apr: 4, april: 4, may: 5, jun: 6, june: 6, jul: 7, july: 7, aug: 8, august: 8, sep: 9, sept: 9, september: 9, oct: 10, october: 10, nov: 11, november: 11, dec: 12, december: 12 };
+  const s = raw.trim().toLowerCase();
+  let y = 0, m = 0, d = 0;
+  let mt = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+  if (mt) { y = +mt[1]; m = +mt[2]; d = +mt[3]; }
+  if (!y) { mt = s.match(/^(\d{1,2})[\/\-\. ](\d{1,2})[\/\-\. ](\d{2,4})$/); if (mt) { d = +mt[1]; m = +mt[2]; y = +mt[3]; } }
+  if (!y) { mt = s.match(/^(\d{1,2})\s+([a-z]+)\.?\s+(\d{2,4})$/); if (mt) { d = +mt[1]; m = months[mt[2]] ?? 0; y = +mt[3]; } }
+  if (!y || !m || !d) return "";
+  if (y < 100) y += y < 30 ? 2000 : 1900;
+  if (m < 1 || m > 12 || d < 1 || d > 31 || y < 1900 || y > new Date().getFullYear()) return "";
+  return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
 function extractFromTranscript(full: string, prior: Extracted): Extracted {
   const t = normalizeDigits(full).replace(/\s+/g, " ").trim();
   const lower = t.toLowerCase();
@@ -269,6 +285,15 @@ function extractFromTranscript(full: string, prior: Extracted): Extracted {
   if (phonePhrase) {
     const parsedPhone = parsePhonePhrase(phonePhrase);
     if (parsedPhone) out.phone_number = parsedPhone;
+  }
+
+  // Date of birth — "born on 15 March 1988", "DOB 1988-03-15", "date of birth is 15/03/1988"
+  const dobMatch = t.match(
+    /(?:born\s+(?:on|in)?|date\s+of\s+birth\s*(?:is|:)?|dob\s*(?:is|:)?|d\.o\.b\.?\s*(?:is|:)?|تاريخ\s+(?:الميلاد|ميلادي)\s*(?:هو)?)\s*([0-9]{1,2}[\/\-\. ][0-9]{1,2}[\/\-\. ][0-9]{2,4}|[0-9]{4}[\/\-][0-9]{1,2}[\/\-][0-9]{1,2}|[0-9]{1,2}\s+(?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)\w*\s+[0-9]{2,4})/i,
+  );
+  if (dobMatch) {
+    const iso = parseDob(dobMatch[1]);
+    if (iso) out.date_of_birth = iso;
   }
 
   // Financing amount — "JOD 120,000", "120 thousand dinars", "one hundred twenty thousand", Arabic amount phrases
@@ -392,6 +417,7 @@ function diffFields(prev: Extracted, next: Extracted): (keyof Extracted)[] {
 const FIELD_LABELS: Record<keyof Extracted, string> = {
   customer_name: "Customer Name",
   phone_number: "Phone",
+  date_of_birth: "Date of Birth",
   net_income_jod: "Salary (JOD)",
   other_income_jod: "Other Income (JOD)",
   existing_obligations_jod: "Existing Obligations (JOD)",
@@ -881,6 +907,7 @@ function Assistant() {
       customer_name: extracted.customer_name.trim(),
       customer_cif: "NA",
       phone_number: extracted.phone_number.trim(),
+      date_of_birth: extracted.date_of_birth.trim(),
       net_income_jod: Number(extracted.net_income_jod),
       company_name: extracted.company_name.trim(),
       product: extracted.product,
@@ -1050,6 +1077,11 @@ function Assistant() {
               label="Phone"
               value={extracted.phone_number}
               onChange={(v) => setExtracted({ ...extracted, phone_number: v })}
+            />
+            <Field
+              label="Date of Birth (YYYY-MM-DD)"
+              value={extracted.date_of_birth}
+              onChange={(v) => setExtracted({ ...extracted, date_of_birth: v })}
             />
             <Field
               label="Employer / Company"

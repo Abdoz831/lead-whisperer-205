@@ -36,6 +36,9 @@ function Pipeline() {
           financing_amount: l.financing_amount,
           net_income_jod: l.net_income_jod,
           cc_notes: l.cc_notes,
+          date_of_birth: l.date_of_birth ?? "",
+          phone_number: l.phone_number ?? "",
+          work_duration: l.work_duration ?? "",
         },
       });
       updateLead(l.lead_id, { enrichment: result, enrichment_status: "idle" });

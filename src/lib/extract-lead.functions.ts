@@ -8,6 +8,7 @@ const Input = z.object({ transcript: z.string().min(1).max(20000) });
 const Schema = z.object({
   customer_name: z.string().describe("Full client name as spoken; empty if not stated"),
   phone_number: z.string().describe("Phone number exactly/normalised from speech, including international formats like 0097150219044 or +97150219044; empty if none"),
+  date_of_birth: z.string().describe("Client's date of birth as ISO YYYY-MM-DD if stated (e.g. '15 March 1988' → '1988-03-15'). If only the year or only age was given, leave empty. Empty if not stated."),
   net_income_jod: z.string().describe("Monthly net SALARY in JOD as bare integer string; empty if not stated"),
   other_income_jod: z.string().describe("Any ADDITIONAL monthly income in JOD (rental, business, spouse, freelance) as bare integer string; empty if none stated"),
   existing_obligations_jod: z.string().describe("Total monthly debt obligations / existing loan instalments / credit card payments in JOD as bare integer string; empty if none stated"),
