@@ -5,9 +5,9 @@ import {
   Headphones,
   Briefcase,
   BarChart3,
-  Sparkles,
   type LucideIcon,
 } from "lucide-react";
+
 
 type Section = {
   label: string;
