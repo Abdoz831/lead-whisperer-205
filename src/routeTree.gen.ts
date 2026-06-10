@@ -15,6 +15,7 @@ import { Route as SalesQueueRouteImport } from './routes/sales.queue'
 import { Route as SalesPipelineRouteImport } from './routes/sales.pipeline'
 import { Route as SalesLedgerRouteImport } from './routes/sales.ledger'
 import { Route as ManagementWorkloadRouteImport } from './routes/management.workload'
+import { Route as ManagementRecallRouteImport } from './routes/management.recall'
 import { Route as ManagementKpiRouteImport } from './routes/management.kpi'
 import { Route as ManagementChurnRouteImport } from './routes/management.churn'
 import { Route as CallCentreSubmissionsRouteImport } from './routes/call-centre.submissions'
@@ -50,6 +51,11 @@ const ManagementWorkloadRoute = ManagementWorkloadRouteImport.update({
   path: '/management/workload',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ManagementRecallRoute = ManagementRecallRouteImport.update({
+  id: '/management/recall',
+  path: '/management/recall',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ManagementKpiRoute = ManagementKpiRouteImport.update({
   id: '/management/kpi',
   path: '/management/kpi',
@@ -77,6 +83,7 @@ export interface FileRoutesByFullPath {
   '/call-centre/submissions': typeof CallCentreSubmissionsRoute
   '/management/churn': typeof ManagementChurnRoute
   '/management/kpi': typeof ManagementKpiRoute
+  '/management/recall': typeof ManagementRecallRoute
   '/management/workload': typeof ManagementWorkloadRoute
   '/sales/ledger': typeof SalesLedgerRoute
   '/sales/pipeline': typeof SalesPipelineRoute
@@ -89,6 +96,7 @@ export interface FileRoutesByTo {
   '/call-centre/submissions': typeof CallCentreSubmissionsRoute
   '/management/churn': typeof ManagementChurnRoute
   '/management/kpi': typeof ManagementKpiRoute
+  '/management/recall': typeof ManagementRecallRoute
   '/management/workload': typeof ManagementWorkloadRoute
   '/sales/ledger': typeof SalesLedgerRoute
   '/sales/pipeline': typeof SalesPipelineRoute
@@ -102,6 +110,7 @@ export interface FileRoutesById {
   '/call-centre/submissions': typeof CallCentreSubmissionsRoute
   '/management/churn': typeof ManagementChurnRoute
   '/management/kpi': typeof ManagementKpiRoute
+  '/management/recall': typeof ManagementRecallRoute
   '/management/workload': typeof ManagementWorkloadRoute
   '/sales/ledger': typeof SalesLedgerRoute
   '/sales/pipeline': typeof SalesPipelineRoute
@@ -116,6 +125,7 @@ export interface FileRouteTypes {
     | '/call-centre/submissions'
     | '/management/churn'
     | '/management/kpi'
+    | '/management/recall'
     | '/management/workload'
     | '/sales/ledger'
     | '/sales/pipeline'
@@ -128,6 +138,7 @@ export interface FileRouteTypes {
     | '/call-centre/submissions'
     | '/management/churn'
     | '/management/kpi'
+    | '/management/recall'
     | '/management/workload'
     | '/sales/ledger'
     | '/sales/pipeline'
@@ -140,6 +151,7 @@ export interface FileRouteTypes {
     | '/call-centre/submissions'
     | '/management/churn'
     | '/management/kpi'
+    | '/management/recall'
     | '/management/workload'
     | '/sales/ledger'
     | '/sales/pipeline'
@@ -153,6 +165,7 @@ export interface RootRouteChildren {
   CallCentreSubmissionsRoute: typeof CallCentreSubmissionsRoute
   ManagementChurnRoute: typeof ManagementChurnRoute
   ManagementKpiRoute: typeof ManagementKpiRoute
+  ManagementRecallRoute: typeof ManagementRecallRoute
   ManagementWorkloadRoute: typeof ManagementWorkloadRoute
   SalesLedgerRoute: typeof SalesLedgerRoute
   SalesPipelineRoute: typeof SalesPipelineRoute
@@ -204,6 +217,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManagementWorkloadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/management/recall': {
+      id: '/management/recall'
+      path: '/management/recall'
+      fullPath: '/management/recall'
+      preLoaderRoute: typeof ManagementRecallRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/management/kpi': {
       id: '/management/kpi'
       path: '/management/kpi'
@@ -241,6 +261,7 @@ const rootRouteChildren: RootRouteChildren = {
   CallCentreSubmissionsRoute: CallCentreSubmissionsRoute,
   ManagementChurnRoute: ManagementChurnRoute,
   ManagementKpiRoute: ManagementKpiRoute,
+  ManagementRecallRoute: ManagementRecallRoute,
   ManagementWorkloadRoute: ManagementWorkloadRoute,
   SalesLedgerRoute: SalesLedgerRoute,
   SalesPipelineRoute: SalesPipelineRoute,
