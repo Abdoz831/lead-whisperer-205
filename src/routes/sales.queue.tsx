@@ -88,7 +88,12 @@ function Queue() {
                     <td className="px-3 py-2"><ScoreCircle score={l.ai_score} priority={l.priority} /></td>
                     <td className="px-3 py-2"><span className={`px-2 py-0.5 rounded text-[10px] font-bold ${priorityClass(l.priority)}`}>{l.priority}</span></td>
                     <td className="px-3 py-2 text-muted-foreground">{l.channel}</td>
-                    <td className="px-3 py-2 text-[11px]">{l.best_time_to_call}</td>
+                    <td className="px-3 py-2 text-[11px]">
+                      {l.best_time_to_call}
+                      {isWithinBestWindow(l.best_time_to_call) && (
+                        <span className="ml-1 inline-block px-1.5 py-0.5 rounded bg-emerald-600 text-white text-[9px] font-bold">CALL NOW</span>
+                      )}
+                    </td>
                     <td className="px-3 py-2 text-muted-foreground">{new Date(l.submitted_at).toLocaleDateString()}</td>
                     <td className="px-3 py-2">
                       <button onClick={(e) => { e.stopPropagation(); accept(l.lead_id); }} className="bg-navy text-navy-foreground px-3 py-1 rounded text-[11px] font-semibold">Accept Lead</button>
