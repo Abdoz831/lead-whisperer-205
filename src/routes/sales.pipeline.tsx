@@ -15,9 +15,34 @@ const STAGE_OPTIONS: Stage[] = ["No Answer", "Follow-up Scheduled", "Docs Pendin
 
 function Pipeline() {
   const { leads, updateLead } = useElip();
+  const enrichFn = useServerFn(enrichLead);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [showBriefing, setShowBriefing] = useState<Lead | null>(null);
   const [rejectLead, setRejectLead] = useState<Lead | null>(null);
+
+  async function runEnrich(l: Lead) {
+    updateLead(l.lead_id, { enrichment_status: "loading", enrichment_error: "" });
+    try {
+      const result = await enrichFn({
+        data: {
+          customer_name: l.customer_name,
+          company_name: l.company_name,
+          job_title: l.job_title,
+          product: l.product,
+          financing_amount: l.financing_amount,
+          net_income_jod: l.net_income_jod,
+          cc_notes: l.cc_notes,
+        },
+      });
+      updateLead(l.lead_id, { enrichment: result, enrichment_status: "idle" });
+      setExpanded(l.lead_id);
+      toast.success(`Social intel + sales playbook ready for ${l.customer_name}`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Failed to enrich lead";
+      updateLead(l.lead_id, { enrichment_status: "error", enrichment_error: msg });
+      toast.error(msg);
+    }
+  }
 
   const active = useMemo(
     () => leads.filter((l) => !["Queued", "Closed Won", "RLM-Reject", "RLM-Expired"].includes(l.current_status) && l.outcome !== "closed_won"),
