@@ -45,7 +45,7 @@ const sections: Section[] = [
       { to: "/management/workload", label: "Workload Monitor" },
       { to: "/management/churn", label: "Churn Alert Queue" },
       { to: "/management/recall", label: "Re-Call Schedule" },
-      { to: "/management/salvage", label: "Group Salvage" },
+      { to: "/management/salvage", label: "Etihad Affiliates" },
       { to: "/management/reactivation", label: "Re-Activation Queue" },
     ],
   },

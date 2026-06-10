@@ -12,7 +12,7 @@ function Salvage() {
 
   return (
     <>
-      <PageHeader title="Group Salvage Pipeline" subtitle="Rejected leads redirected to sister institutions. Track recovery rate — target 20%." />
+      <PageHeader title="Etihad Affiliates Pipeline" subtitle="Rejected leads redirected to sister institutions. Track recovery rate — target 20%." />
       <div className="p-6 space-y-4">
         <div className="elip-card p-4 flex items-center justify-between">
           <div className="text-sm font-semibold text-navy">{salvage.length} of {salvage.length} eligible leads redirected — Target: 20%</div>
@@ -20,7 +20,7 @@ function Salvage() {
         </div>
 
         <div className="rounded border-l-4 border-amber-500 bg-amber-50 p-4 text-xs">
-          ⚠️ Group Salvage requires legal sign-off before activation. Legal opinion on CBJ compliance and PDPL conformity is a mandatory condition. <strong>Status: In progress.</strong>
+          ⚠️ Etihad Affiliates requires legal sign-off before activation. Legal opinion on CBJ compliance and PDPL conformity is a mandatory condition. <strong>Status: In progress.</strong>
         </div>
 
         <div className="elip-card overflow-hidden">
@@ -29,7 +29,7 @@ function Salvage() {
               <tr>{["Lead ID", "Customer", "Reason", "Amount", "Referred By", "Affiliate", "Status", "Date"].map(h => <th key={h} className="text-left px-3 py-2 font-semibold">{h}</th>)}</tr>
             </thead>
             <tbody>
-              {salvage.length === 0 && <tr><td colSpan={8} className="text-center p-8 text-muted-foreground">No leads in Group Salvage pipeline yet.</td></tr>}
+              {salvage.length === 0 && <tr><td colSpan={8} className="text-center p-8 text-muted-foreground">No leads in Etihad Affiliates pipeline yet.</td></tr>}
               {salvage.map(l => (
                 <tr key={l.lead_id} className="border-t">
                   <td className="px-3 py-2 font-mono">{l.lead_id}</td>
