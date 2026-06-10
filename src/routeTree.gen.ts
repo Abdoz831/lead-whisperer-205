@@ -14,6 +14,7 @@ import { Route as SalesRecallRouteImport } from './routes/sales.recall'
 import { Route as SalesQueueRouteImport } from './routes/sales.queue'
 import { Route as SalesPipelineRouteImport } from './routes/sales.pipeline'
 import { Route as SalesLedgerRouteImport } from './routes/sales.ledger'
+import { Route as ManagementKpiRouteImport } from './routes/management.kpi'
 import { Route as CallCentreSubmissionsRouteImport } from './routes/call-centre.submissions'
 import { Route as CallCentreNewLeadRouteImport } from './routes/call-centre.new-lead'
 
@@ -42,6 +43,11 @@ const SalesLedgerRoute = SalesLedgerRouteImport.update({
   path: '/sales/ledger',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ManagementKpiRoute = ManagementKpiRouteImport.update({
+  id: '/management/kpi',
+  path: '/management/kpi',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CallCentreSubmissionsRoute = CallCentreSubmissionsRouteImport.update({
   id: '/call-centre/submissions',
   path: '/call-centre/submissions',
@@ -57,6 +63,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/call-centre/new-lead': typeof CallCentreNewLeadRoute
   '/call-centre/submissions': typeof CallCentreSubmissionsRoute
+  '/management/kpi': typeof ManagementKpiRoute
   '/sales/ledger': typeof SalesLedgerRoute
   '/sales/pipeline': typeof SalesPipelineRoute
   '/sales/queue': typeof SalesQueueRoute
@@ -66,6 +73,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/call-centre/new-lead': typeof CallCentreNewLeadRoute
   '/call-centre/submissions': typeof CallCentreSubmissionsRoute
+  '/management/kpi': typeof ManagementKpiRoute
   '/sales/ledger': typeof SalesLedgerRoute
   '/sales/pipeline': typeof SalesPipelineRoute
   '/sales/queue': typeof SalesQueueRoute
@@ -76,6 +84,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/call-centre/new-lead': typeof CallCentreNewLeadRoute
   '/call-centre/submissions': typeof CallCentreSubmissionsRoute
+  '/management/kpi': typeof ManagementKpiRoute
   '/sales/ledger': typeof SalesLedgerRoute
   '/sales/pipeline': typeof SalesPipelineRoute
   '/sales/queue': typeof SalesQueueRoute
@@ -87,6 +96,7 @@ export interface FileRouteTypes {
     | '/'
     | '/call-centre/new-lead'
     | '/call-centre/submissions'
+    | '/management/kpi'
     | '/sales/ledger'
     | '/sales/pipeline'
     | '/sales/queue'
@@ -96,6 +106,7 @@ export interface FileRouteTypes {
     | '/'
     | '/call-centre/new-lead'
     | '/call-centre/submissions'
+    | '/management/kpi'
     | '/sales/ledger'
     | '/sales/pipeline'
     | '/sales/queue'
@@ -105,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/call-centre/new-lead'
     | '/call-centre/submissions'
+    | '/management/kpi'
     | '/sales/ledger'
     | '/sales/pipeline'
     | '/sales/queue'
@@ -115,6 +127,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CallCentreNewLeadRoute: typeof CallCentreNewLeadRoute
   CallCentreSubmissionsRoute: typeof CallCentreSubmissionsRoute
+  ManagementKpiRoute: typeof ManagementKpiRoute
   SalesLedgerRoute: typeof SalesLedgerRoute
   SalesPipelineRoute: typeof SalesPipelineRoute
   SalesQueueRoute: typeof SalesQueueRoute
@@ -158,6 +171,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SalesLedgerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/management/kpi': {
+      id: '/management/kpi'
+      path: '/management/kpi'
+      fullPath: '/management/kpi'
+      preLoaderRoute: typeof ManagementKpiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/call-centre/submissions': {
       id: '/call-centre/submissions'
       path: '/call-centre/submissions'
@@ -179,6 +199,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CallCentreNewLeadRoute: CallCentreNewLeadRoute,
   CallCentreSubmissionsRoute: CallCentreSubmissionsRoute,
+  ManagementKpiRoute: ManagementKpiRoute,
   SalesLedgerRoute: SalesLedgerRoute,
   SalesPipelineRoute: SalesPipelineRoute,
   SalesQueueRoute: SalesQueueRoute,
