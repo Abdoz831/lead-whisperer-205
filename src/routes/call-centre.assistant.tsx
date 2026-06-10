@@ -203,7 +203,10 @@ function extractFromTranscript(full: string, prior: Extracted): Extracted {
     /(?:phone(?:\s+number)?|mobile|number|call\s+me\s+on)\s*(?:is|:)?\s*((?:plus|double|triple|zero|oh|o|one|two|three|four|five|six|seven|eight|nine|\s|-){14,})(?=\s+(?:and|my|i|salary|income|work|need|want|$)|[.,]|$)/i,
     /(\+?962[\s-]?\d[\s-]?\d{3}[\s-]?\d{4}|\b07[789][\s-]?\d{3}[\s-]?\d{4}\b|(?:\+|00)\d[\d\s()-]{7,24}\d)/,
   ]);
-  if (phonePhrase) out.phone_number = parsePhonePhrase(phonePhrase);
+  if (phonePhrase) {
+    const parsedPhone = parsePhonePhrase(phonePhrase);
+    if (parsedPhone) out.phone_number = parsedPhone;
+  }
 
   // Financing amount — "JOD 120,000", "120 thousand dinars", "one hundred twenty thousand", Arabic amount phrases
   const amountPhrase = firstCapturedPhrase(t, [
@@ -211,13 +214,19 @@ function extractFromTranscript(full: string, prior: Extracted): Extracted {
     /(?:jod|jd|dinars?|دينار)\s*([\w\u0600-\u06ff\s.,-]{2,50})(?=\s+(?:for|and|my|salary|income|$)|[.,،]|$)/i,
     /([\w\u0600-\u06ff\s.,-]{2,50})\s*(?:jod|jd|dinars?|دينار)(?=\s+(?:for|and|my|salary|income|$)|[.,،]|$)/i,
   ]);
-  if (amountPhrase) out.financing_amount = parseMoneyPhrase(amountPhrase);
+  if (amountPhrase) {
+    const parsedAmount = parseMoneyPhrase(amountPhrase);
+    if (parsedAmount) out.financing_amount = parsedAmount;
+  }
 
   // Income — "salary 2000", "income 2500", "earn 1800"
   const incomePhrase = firstCapturedPhrase(t, [
     /(?:salary|income|net\s+income|monthly\s+income|earn(?:ing)?s?|make|راتبي|دخلي)\s*(?:is|:|حوالي)?\s*([\w\u0600-\u06ff\s.,-]{2,40})(?=\s+(?:and|my|i|work|need|want|$)|[.,،]|$)/i,
   ]);
-  if (incomePhrase) out.net_income_jod = parseMoneyPhrase(incomePhrase);
+  if (incomePhrase) {
+    const parsedIncome = parseMoneyPhrase(incomePhrase);
+    if (parsedIncome) out.net_income_jod = parsedIncome;
+  }
 
   // Product keywords
   const productMap: [RegExp, Product][] = [
@@ -454,7 +463,20 @@ function Assistant() {
         const sp = speakerRef.current;
         setTurns((prev) => {
           const cleaned = prev.filter((p) => !p.interim);
-          return [...cleaned, { id: "interim", speaker: sp, text: interim, ts: Date.now(), interim: true }];
+          const next = [...cleaned, { id: "interim", speaker: sp, text: interim, ts: Date.now(), interim: true }];
+          const conv = next.filter((n) => n.speaker !== "ai").map((n) => n.text).join(" ");
+          const before = extractedRef.current;
+          const after = extractFromTranscript(conv, before);
+          const changed = diffFields(before, after);
+          if (changed.length) setExtracted(after);
+          pushDebug({
+            source: "interim",
+            transcript: conv,
+            raw: after,
+            ...scoreConfidence(after as unknown as Record<string, unknown>),
+            changed: changed.map((k) => FIELD_LABELS[k]),
+          });
+          return next;
         });
       }
     };
@@ -700,6 +722,8 @@ function Assistant() {
                     ? "bg-red-600 text-white"
                     : d.source === "ai"
                     ? "bg-emerald-600 text-white"
+                    : d.source === "interim"
+                    ? "bg-violet-600 text-white"
                     : "bg-sky-600 text-white";
                 return (
                   <div key={d.id} className="p-3 grid grid-cols-12 gap-3">
