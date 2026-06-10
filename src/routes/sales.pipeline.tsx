@@ -231,7 +231,7 @@ function Pipeline() {
                       </tr>
                       {expanded === l.lead_id && (
                         <tr className="bg-zinc-50/50">
-                          <td colSpan={13} className="p-4 space-y-3">
+                          <td colSpan={14} className="p-4 space-y-3">
                             <EnrichmentPanel lead={l} onEnrich={() => runEnrich(l)} />
                             <CCNotesPanel lead={l} />
                             <div className="elip-card p-3">
