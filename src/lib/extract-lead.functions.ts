@@ -49,7 +49,7 @@ export const extractLeadFromTranscript = createServerFn({ method: "POST" })
 
     const gateway = createLovableAiGatewayProvider(key);
     const { object } = await generateObject({
-      model: gateway("google/gemini-3-flash-preview", { structuredOutputs: true }),
+      model: gateway("google/gemini-3-flash-preview"),
       schema: Schema,
       maxOutputTokens: 2048,
       system:

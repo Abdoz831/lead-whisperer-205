@@ -65,6 +65,24 @@ const EMPTY: Extracted = {
 };
 
 // ------------ Extraction engine ------------
+function normalizePhone(raw: string) {
+  const trimmed = raw.trim();
+  const digits = trimmed.replace(/\D/g, "");
+  if (!digits) return trimmed;
+  return trimmed.startsWith("+") ? `+${digits}` : digits;
+}
+
+function cleanPhrase(value: string) {
+  return value
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/[.,;:]+$/, "");
+}
+
+function titleCase(value: string) {
+  return cleanPhrase(value).replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 function extractFromTranscript(full: string, prior: Extracted): Extracted {
   const t = full.replace(/\s+/g, " ").trim();
   const lower = t.toLowerCase();
@@ -74,9 +92,11 @@ function extractFromTranscript(full: string, prior: Extracted): Extracted {
   const name = t.match(/\b(?:my name is|i am|this is|i'm)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2})/);
   if (name && !prior.customer_name) out.customer_name = name[1];
 
-  // Phone: Jordanian 07X XXX XXXX or +962
-  const phone = t.match(/(\+?962[\s-]?\d[\s-]?\d{3}[\s-]?\d{4}|\b07[789][\s-]?\d{3}[\s-]?\d{4}\b)/);
-  if (phone) out.phone_number = phone[1].replace(/\s+/g, "");
+  // Phone: Jordanian, UAE/GCC, or generic international numbers spoken with spaces/dashes
+  const phone =
+    t.match(/(?:phone(?:\s+number)?\s*(?:is|:)?|mobile\s*(?:is|:)?|call\s+me\s+on)\s*(\+?\d[\d\s()-]{7,24}\d)/i) ||
+    t.match(/(\+?962[\s-]?\d[\s-]?\d{3}[\s-]?\d{4}|\b07[789][\s-]?\d{3}[\s-]?\d{4}\b|(?:\+|00)\d[\d\s()-]{7,24}\d)/);
+  if (phone) out.phone_number = normalizePhone(phone[1]);
 
   // Financing amount — "JOD 120,000", "120 thousand dinars", "120k"
   const amt =
@@ -109,15 +129,18 @@ function extractFromTranscript(full: string, prior: Extracted): Extracted {
   }
 
   // Company / employer — "I work at X", "work for X", "employed by X", "ministry of X"
+  const roleOfCompany = t.match(/(?:work(?:ing)?\s+as|position\s+is|job\s+is)\s+(?:a|an)?\s*([a-z][a-z\- ]{2,45}?)\s+of\s+([A-Z][\w&.\- ]{2,80}?)(?:\.|,| and | for | with |$)/i);
   const co =
-    t.match(/(?:i\s+work\s+(?:at|for|in)|employed\s+(?:by|at)|company\s+is|employer\s+is)\s+([A-Z][\w&.\- ]{2,40}?)(?:\.|,| and | as | for | with |$)/i) ||
+    roleOfCompany ||
+    t.match(/(?:i\s+work\s+(?:at|for|in)|i'?m\s+working\s+(?:at|for|in)|employed\s+(?:by|at)|company\s+is|employer\s+is)\s+([A-Z][\w&.\- ]{2,80}?)(?:\.|,| and | as | for | with |$)/i) ||
     t.match(/\b(Ministry\s+of\s+[A-Z][\w ]+|Royal\s+Jordanian|Arab\s+Bank|Housing\s+Bank|Aramex|Zain\s+Jordan|Orange\s+Telecom|Jordan\s+Hospital|King\s+Hussein\s+Cancer\s+Center|PwC\s+Jordan|University\s+of\s+Jordan)\b/);
-  if (co) out.company_name = (co[1] || co[0]).trim();
+  if (roleOfCompany) out.company_name = cleanPhrase(roleOfCompany[2]);
+  else if (co) out.company_name = cleanPhrase(co[1] || co[0]);
   else if (/self[-\s]?employed/i.test(t)) out.company_name = "Self-employed";
 
-  // Job title — "I'm a teacher", "work as engineer", "I am a doctor/nurse/manager"
-  const job = t.match(/(?:i'?m\s+(?:a|an)|work\s+as\s+(?:a|an)?|position\s+is|job\s+is)\s+([a-z][a-z\- ]{2,30}?)(?:\.|,| at | with | for | in |$)/i);
-  if (job) out.job_title = job[1].trim().replace(/\b\w/g, (c) => c.toUpperCase());
+  // Job title — "I'm a teacher", "working as Secretary General", "I am a doctor/nurse/manager"
+  const job = roleOfCompany || t.match(/(?:i'?m\s+(?:a|an)|work(?:ing)?\s+as\s+(?:a|an)?|position\s+is|job\s+is)\s+([a-z][a-z\- ]{2,45}?)(?:\.|,| at | with | for | in | of |$)/i);
+  if (job) out.job_title = titleCase(job[1]);
 
   // Work duration — "X years at", "for X years"
   const dur = lower.match(/(\d+)\s*(?:years?|yrs?)/);
