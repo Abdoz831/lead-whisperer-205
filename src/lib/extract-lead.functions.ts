@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { generateText, Output } from "ai";
+import { generateObject } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 
@@ -48,16 +48,17 @@ export const extractLeadFromTranscript = createServerFn({ method: "POST" })
     if (!key) throw new Error("Missing LOVABLE_API_KEY");
 
     const gateway = createLovableAiGatewayProvider(key);
-    const { experimental_output } = await generateText({
+    const { object } = await generateObject({
       model: gateway("google/gemini-3-flash-preview"),
-      experimental_output: Output.object({ schema: Schema }),
+      schema: Schema,
       system:
         "You extract structured retail-banking lead data from a transcript of a call between a Bank al Etihad agent and a client. " +
-        "The transcript may mix English and Jordanian Arabic. Read carefully — clients often state details in passing. " +
-        "Return ONLY data you are confident about from the transcript. Leave optional string fields as an empty string if not stated. " +
-        "Never invent names, phone numbers, employers, or amounts. Convert spoken numbers (e.g. 'one hundred and twenty thousand dinars') to integers.",
+        "The transcript may mix English and Jordanian Arabic / any spoken dialect. Read carefully — clients often state details in passing. " +
+        "Extract every field you can confidently infer (name, phone in any country format, employer/government body, job title, product type, amount, tenure). " +
+        "Leave optional string fields as an empty string if truly not stated. Never invent values. " +
+        "Convert spoken numbers (e.g. 'twenty thousand dollars' → 20000, 'one hundred and twenty thousand dinars' → 120000) to bare integers.",
       prompt: `Transcript:\n${data.transcript}`,
     });
 
-    return experimental_output;
+    return object;
   });
