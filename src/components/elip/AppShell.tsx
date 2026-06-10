@@ -30,9 +30,9 @@ const sections: Section[] = [
     Icon: Briefcase,
     roles: ["rlm"],
     links: [
+      { to: "/sales/dashboard", label: "Pipeline Dashboard" },
       { to: "/sales/queue", label: "Leads Queue" },
       { to: "/sales/pipeline", label: "Active Pipeline" },
-      { to: "/sales/recall", label: "Re-Call Queue" },
       { to: "/sales/ledger", label: "Processed Ledger" },
     ],
   },

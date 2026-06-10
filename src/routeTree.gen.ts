@@ -14,6 +14,7 @@ import { Route as SalesRecallRouteImport } from './routes/sales.recall'
 import { Route as SalesQueueRouteImport } from './routes/sales.queue'
 import { Route as SalesPipelineRouteImport } from './routes/sales.pipeline'
 import { Route as SalesLedgerRouteImport } from './routes/sales.ledger'
+import { Route as SalesDashboardRouteImport } from './routes/sales.dashboard'
 import { Route as ManagementWorkloadRouteImport } from './routes/management.workload'
 import { Route as ManagementSalvageRouteImport } from './routes/management.salvage'
 import { Route as ManagementRecallRouteImport } from './routes/management.recall'
@@ -45,6 +46,11 @@ const SalesPipelineRoute = SalesPipelineRouteImport.update({
 const SalesLedgerRoute = SalesLedgerRouteImport.update({
   id: '/sales/ledger',
   path: '/sales/ledger',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SalesDashboardRoute = SalesDashboardRouteImport.update({
+  id: '/sales/dashboard',
+  path: '/sales/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ManagementWorkloadRoute = ManagementWorkloadRouteImport.update({
@@ -92,6 +98,7 @@ export interface FileRoutesByFullPath {
   '/management/recall': typeof ManagementRecallRoute
   '/management/salvage': typeof ManagementSalvageRoute
   '/management/workload': typeof ManagementWorkloadRoute
+  '/sales/dashboard': typeof SalesDashboardRoute
   '/sales/ledger': typeof SalesLedgerRoute
   '/sales/pipeline': typeof SalesPipelineRoute
   '/sales/queue': typeof SalesQueueRoute
@@ -106,6 +113,7 @@ export interface FileRoutesByTo {
   '/management/recall': typeof ManagementRecallRoute
   '/management/salvage': typeof ManagementSalvageRoute
   '/management/workload': typeof ManagementWorkloadRoute
+  '/sales/dashboard': typeof SalesDashboardRoute
   '/sales/ledger': typeof SalesLedgerRoute
   '/sales/pipeline': typeof SalesPipelineRoute
   '/sales/queue': typeof SalesQueueRoute
@@ -121,6 +129,7 @@ export interface FileRoutesById {
   '/management/recall': typeof ManagementRecallRoute
   '/management/salvage': typeof ManagementSalvageRoute
   '/management/workload': typeof ManagementWorkloadRoute
+  '/sales/dashboard': typeof SalesDashboardRoute
   '/sales/ledger': typeof SalesLedgerRoute
   '/sales/pipeline': typeof SalesPipelineRoute
   '/sales/queue': typeof SalesQueueRoute
@@ -137,6 +146,7 @@ export interface FileRouteTypes {
     | '/management/recall'
     | '/management/salvage'
     | '/management/workload'
+    | '/sales/dashboard'
     | '/sales/ledger'
     | '/sales/pipeline'
     | '/sales/queue'
@@ -151,6 +161,7 @@ export interface FileRouteTypes {
     | '/management/recall'
     | '/management/salvage'
     | '/management/workload'
+    | '/sales/dashboard'
     | '/sales/ledger'
     | '/sales/pipeline'
     | '/sales/queue'
@@ -165,6 +176,7 @@ export interface FileRouteTypes {
     | '/management/recall'
     | '/management/salvage'
     | '/management/workload'
+    | '/sales/dashboard'
     | '/sales/ledger'
     | '/sales/pipeline'
     | '/sales/queue'
@@ -180,6 +192,7 @@ export interface RootRouteChildren {
   ManagementRecallRoute: typeof ManagementRecallRoute
   ManagementSalvageRoute: typeof ManagementSalvageRoute
   ManagementWorkloadRoute: typeof ManagementWorkloadRoute
+  SalesDashboardRoute: typeof SalesDashboardRoute
   SalesLedgerRoute: typeof SalesLedgerRoute
   SalesPipelineRoute: typeof SalesPipelineRoute
   SalesQueueRoute: typeof SalesQueueRoute
@@ -221,6 +234,13 @@ declare module '@tanstack/react-router' {
       path: '/sales/ledger'
       fullPath: '/sales/ledger'
       preLoaderRoute: typeof SalesLedgerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sales/dashboard': {
+      id: '/sales/dashboard'
+      path: '/sales/dashboard'
+      fullPath: '/sales/dashboard'
+      preLoaderRoute: typeof SalesDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/management/workload': {
@@ -284,6 +304,7 @@ const rootRouteChildren: RootRouteChildren = {
   ManagementRecallRoute: ManagementRecallRoute,
   ManagementSalvageRoute: ManagementSalvageRoute,
   ManagementWorkloadRoute: ManagementWorkloadRoute,
+  SalesDashboardRoute: SalesDashboardRoute,
   SalesLedgerRoute: SalesLedgerRoute,
   SalesPipelineRoute: SalesPipelineRoute,
   SalesQueueRoute: SalesQueueRoute,
