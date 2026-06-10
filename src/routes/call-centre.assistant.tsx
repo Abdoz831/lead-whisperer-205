@@ -74,6 +74,7 @@ type DebugEntry = {
 const EMPTY: Extracted = {
   customer_name: "",
   phone_number: "",
+  date_of_birth: "",
   net_income_jod: "",
   other_income_jod: "",
   existing_obligations_jod: "",
