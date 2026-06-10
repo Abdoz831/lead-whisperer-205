@@ -7,7 +7,7 @@ const Input = z.object({ transcript: z.string().min(1).max(20000) });
 
 const Schema = z.object({
   customer_name: z.string().describe("Full client name as spoken; empty if not stated"),
-  phone_number: z.string().describe("Jordan phone, normalised digits e.g. 0791234567 or +962791234567; empty if none"),
+  phone_number: z.string().describe("Phone number exactly/normalised from speech, including international formats like 0097150219044 or +97150219044; empty if none"),
   net_income_jod: z.string().describe("Monthly net income in JOD as bare integer string; empty if not stated"),
   company_name: z.string().describe("Current employer / company name; empty if none"),
   job_title: z.string().describe("Job title/role; empty if none"),
@@ -51,11 +51,12 @@ export const extractLeadFromTranscript = createServerFn({ method: "POST" })
     const { object } = await generateObject({
       model: gateway("google/gemini-3-flash-preview"),
       schema: Schema,
-      
+      maxOutputTokens: 2048,
       system:
         "You extract structured retail-banking lead data from a transcript of a call between a Bank al Etihad agent and a client. " +
         "The transcript may mix English and Jordanian Arabic / any spoken dialect. Read carefully — clients often state details in passing. " +
         "Extract every field you can confidently infer (name, phone in any country format, employer/government body, job title, product type, amount, tenure). " +
+        "For phrases like 'working as a Secretary General of Global AI Award in Dubai Quality Group', job_title is 'Secretary General' and company_name is 'Global AI Award in Dubai Quality Group'. " +
         "Leave optional string fields as an empty string if truly not stated. Never invent values. " +
         "Convert spoken numbers (e.g. 'twenty thousand dollars' → 20000, 'one hundred and twenty thousand dinars' → 120000) to bare integers.",
       prompt: `Transcript:\n${data.transcript}`,
