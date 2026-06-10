@@ -75,8 +75,9 @@ function Sidebar() {
         {sections.map((s) => (
           <div key={s.label} className="mb-4">
             <div className="px-5 py-1 text-[11px] font-semibold tracking-wider text-white/50 flex items-center gap-2">
-              <span>{s.icon}</span> {s.label}
+              <s.Icon className="w-3.5 h-3.5" strokeWidth={2.25} /> {s.label}
             </div>
+
             {s.links.map((l) => {
               const active = pathname === l.to;
               return (
