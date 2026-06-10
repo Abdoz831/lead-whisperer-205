@@ -129,10 +129,10 @@ function extractFromTranscript(full: string, prior: Extracted): Extracted {
   }
 
   // Company / employer — "I work at X", "work for X", "employed by X", "ministry of X"
-  const roleOfCompany = t.match(/(?:work(?:ing)?\s+as|position\s+is|job\s+is)\s+(?:a|an)?\s*([a-z][a-z\- ]{2,45}?)\s+of\s+([A-Z][\w&.\- ]{2,80}?)(?:\.|,| and | for | with |$)/i);
+  const roleOfCompany = t.match(/(?:work(?:ing)?\s+as|position\s+is|job\s+is)\s+(?:a|an)?\s*([a-z][a-z\- ]{2,45}?)\s+of\s+([A-Za-z][\w&.\- ]{2,80}?)(?:\.|,| and | for | with |$)/i);
   const co =
     roleOfCompany ||
-    t.match(/(?:i\s+work\s+(?:at|for|in)|i'?m\s+working\s+(?:at|for|in)|employed\s+(?:by|at)|company\s+is|employer\s+is)\s+([A-Z][\w&.\- ]{2,80}?)(?:\.|,| and | as | for | with |$)/i) ||
+    t.match(/(?:i\s+work\s+(?:at|for|in)|i'?m\s+working\s+(?:at|for|in)|employed\s+(?:by|at)|company\s+is|employer\s+is)\s+([A-Za-z][\w&.\- ]{2,80}?)(?:\.|,| and | as | for | with |$)/i) ||
     t.match(/\b(Ministry\s+of\s+[A-Z][\w ]+|Royal\s+Jordanian|Arab\s+Bank|Housing\s+Bank|Aramex|Zain\s+Jordan|Orange\s+Telecom|Jordan\s+Hospital|King\s+Hussein\s+Cancer\s+Center|PwC\s+Jordan|University\s+of\s+Jordan)\b/);
   if (roleOfCompany) out.company_name = cleanPhrase(roleOfCompany[2]);
   else if (co) out.company_name = cleanPhrase(co[1] || co[0]);
