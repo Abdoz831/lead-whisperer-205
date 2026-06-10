@@ -57,6 +57,20 @@ function Pipeline() {
     [leads]
   );
 
+  // Auto-enrich any active lead that hasn't been enriched yet — staggered to avoid rate limits.
+  useEffect(() => {
+    const pending = active.filter(
+      (l) => !l.enrichment && l.enrichment_status !== "loading" && l.enrichment_status !== "error" && !enrichingRef.current.has(l.lead_id)
+    );
+    if (pending.length === 0) return;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    pending.slice(0, 6).forEach((l, i) => {
+      timers.push(setTimeout(() => runEnrich(l, { silent: true }), i * 1200));
+    });
+    return () => timers.forEach(clearTimeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active.length]);
+
   const totalActive = active.reduce((s, l) => s + l.financing_amount, 0);
   const closed = leads.filter((l) => l.outcome === "closed_won" || l.current_status === "Approved");
   const totalClosed = closed.reduce((s, l) => s + l.financing_amount, 0);
