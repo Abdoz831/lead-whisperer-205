@@ -1073,17 +1073,59 @@ function Assistant() {
                 onChange={(v) => setExtracted({ ...extracted, financing_amount: v })}
               />
               <Field
-                label="Net Income (JOD)"
+                label="Salary (JOD/month)"
                 value={extracted.net_income_jod}
                 onChange={(v) => setExtracted({ ...extracted, net_income_jod: v })}
               />
             </div>
+
+            <div className="rounded border border-emerald-200 bg-emerald-50/40 p-2.5 space-y-2">
+              <div className="text-[10px] uppercase font-bold text-emerald-800">
+                💰 Financial Status (additional)
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field
+                  label="Other Income (JOD/mo)"
+                  value={extracted.other_income_jod}
+                  onChange={(v) => setExtracted({ ...extracted, other_income_jod: v })}
+                />
+                <Field
+                  label="Existing Obligations (JOD/mo)"
+                  value={extracted.existing_obligations_jod}
+                  onChange={(v) => setExtracted({ ...extracted, existing_obligations_jod: v })}
+                />
+                <Field
+                  label="Years in Current Job"
+                  value={extracted.years_in_current_job}
+                  onChange={(v) => setExtracted({ ...extracted, years_in_current_job: v })}
+                />
+                <Field
+                  label="Dependents"
+                  value={extracted.dependents}
+                  onChange={(v) => setExtracted({ ...extracted, dependents: v })}
+                />
+              </div>
+              <div>
+                <div className="text-[10px] uppercase font-semibold text-zinc-500 mb-1">
+                  Financial Notes (assets, other banks, history…)
+                </div>
+                <textarea
+                  value={extracted.financial_notes}
+                  onChange={(e) => setExtracted({ ...extracted, financial_notes: e.target.value })}
+                  rows={2}
+                  className={`w-full border rounded px-2 py-1.5 text-xs ${extracted.financial_notes ? "bg-gold/5 border-gold/40" : "border-zinc-300"}`}
+                  placeholder="—"
+                />
+              </div>
+            </div>
+
             <Select
               label="Channel"
               value={extracted.channel}
               options={CHANNELS as unknown as string[]}
               onChange={(v) => setExtracted({ ...extracted, channel: v })}
             />
+
 
             <div>
               <div className="text-[10px] uppercase font-semibold text-zinc-500 mb-1">
