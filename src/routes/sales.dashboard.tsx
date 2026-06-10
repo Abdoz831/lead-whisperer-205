@@ -83,6 +83,23 @@ function SalesDashboard() {
     [leads],
   );
 
+  const ledger = useMemo(
+    () =>
+      leads
+        .filter(
+          (l) =>
+            l.outcome === "closed_won" ||
+            l.current_status === "Closed Won" ||
+            l.current_status === "RLM-Reject" ||
+            l.current_status === "RLM-Expired" ||
+            l.current_status === "Approved",
+        )
+        .sort((a, b) => (b.submitted_at || "").localeCompare(a.submitted_at || "")),
+    [leads],
+  );
+
+
+
 
   return (
     <>
