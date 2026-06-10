@@ -436,7 +436,9 @@ function Assistant() {
         <div className="col-span-5 elip-card flex flex-col overflow-hidden">
           <div className="px-4 py-3 border-b bg-card flex items-center justify-between">
             <h2 className="text-sm font-bold text-navy">AI-Extracted Lead</h2>
-            <span className="text-[10px] bg-gold text-gold-foreground px-2 py-0.5 rounded font-bold">LIVE</span>
+            <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${aiThinking ? "bg-primary text-primary-foreground animate-pulse" : "bg-gold text-gold-foreground"}`}>
+              {aiThinking ? "AI THINKING…" : "LIVE"}
+            </span>
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-3 text-xs">
             <Field label="Customer Name" value={extracted.customer_name} onChange={(v) => setExtracted({ ...extracted, customer_name: v })} />
