@@ -52,6 +52,20 @@ type Extracted = {
   channel: string;
 };
 
+type DebugEntry = {
+  id: string;
+  ts: number;
+  source: "regex" | "ai" | "ai-error";
+  transcript: string;
+  raw: unknown;
+  confidence: number;
+  filled: number;
+  total: number;
+  changed: string[];
+  latencyMs?: number;
+  error?: string;
+};
+
 const EMPTY: Extracted = {
   customer_name: "",
   phone_number: "",
@@ -190,6 +204,8 @@ function Assistant() {
   const [supported, setSupported] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [aiThinking, setAiThinking] = useState(false);
+  const [showDebug, setShowDebug] = useState(true);
+  const [debugLog, setDebugLog] = useState<DebugEntry[]>([]);
 
   const recRef = useRef<SpeechRecognitionLike | null>(null);
   const speakerRef = useRef(speaker);
@@ -200,6 +216,22 @@ function Assistant() {
   const aiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const aiSeqRef = useRef(0);
   const lastSentRef = useRef("");
+
+  function pushDebug(entry: Omit<DebugEntry, "id" | "ts">) {
+    setDebugLog((prev) => [
+      { id: `dbg-${Date.now()}-${Math.random()}`, ts: Date.now(), ...entry },
+      ...prev,
+    ].slice(0, 40));
+  }
+
+  function scoreConfidence(obj: Record<string, unknown>) {
+    const keys = Object.keys(EMPTY) as (keyof Extracted)[];
+    const filled = keys.filter((k) => {
+      const v = obj[k as string];
+      return typeof v === "string" && v.trim().length > 0;
+    }).length;
+    return { filled, total: keys.length, confidence: filled / keys.length };
+  }
 
 
   // init recognition
@@ -229,6 +261,7 @@ function Assistant() {
       lastSentRef.current = transcript;
       const seq = ++aiSeqRef.current;
       setAiThinking(true);
+      const startedAt = Date.now();
       try {
         const result = await extractFn({ data: { transcript } });
         if (seq !== aiSeqRef.current) return;
@@ -242,6 +275,17 @@ function Assistant() {
           }
         });
         const changed = diffFields(before, merged);
+        const score = scoreConfidence(result as unknown as Record<string, unknown>);
+        pushDebug({
+          source: "ai",
+          transcript,
+          raw: result,
+          confidence: score.confidence,
+          filled: score.filled,
+          total: score.total,
+          changed: changed.map((k) => FIELD_LABELS[k]),
+          latencyMs: Date.now() - startedAt,
+        });
         if (changed.length) {
           setExtracted(merged);
           setTurns((prev) => [
@@ -256,6 +300,17 @@ function Assistant() {
         }
       } catch (err) {
         console.error("AI extraction failed", err);
+        pushDebug({
+          source: "ai-error",
+          transcript,
+          raw: null,
+          confidence: 0,
+          filled: 0,
+          total: Object.keys(EMPTY).length,
+          changed: [],
+          latencyMs: Date.now() - startedAt,
+          error: err instanceof Error ? err.message : String(err),
+        });
       } finally {
         if (seq === aiSeqRef.current) setAiThinking(false);
       }
@@ -285,7 +340,18 @@ function Assistant() {
           const conv = next.filter((n) => n.speaker !== "ai" && !n.interim).map((n) => n.text).join(" ");
           const before = extractedRef.current;
           const after = extractFromTranscript(conv, before);
-          if (diffFields(before, after).length) setExtracted(after);
+          const changed = diffFields(before, after);
+          if (changed.length) setExtracted(after);
+          const score = scoreConfidence(after as unknown as Record<string, unknown>);
+          pushDebug({
+            source: "regex",
+            transcript: conv,
+            raw: after,
+            confidence: score.confidence,
+            filled: score.filled,
+            total: score.total,
+            changed: changed.map((k) => FIELD_LABELS[k]),
+          });
           // 2. Authoritative AI extraction (debounced)
           scheduleAiExtraction(next);
           return next;
@@ -497,6 +563,95 @@ function Assistant() {
               Submitting as <strong>{currentUser.name}</strong>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Live Debug Panel */}
+      <div className="px-6 pb-6">
+        <div className="elip-card overflow-hidden">
+          <button
+            onClick={() => setShowDebug((s) => !s)}
+            className="w-full px-4 py-2 border-b bg-zinc-900 text-zinc-100 flex items-center justify-between text-xs font-mono"
+          >
+            <span>
+              🐞 LIVE DEBUG · {debugLog.length} event{debugLog.length === 1 ? "" : "s"} ·
+              latest source:{" "}
+              <strong className="text-gold">
+                {debugLog[0]?.source ?? "—"}
+              </strong>
+              {debugLog[0] && (
+                <>
+                  {" · conf "}
+                  <strong className="text-gold">
+                    {(debugLog[0].confidence * 100).toFixed(0)}%
+                  </strong>
+                  {" ("}
+                  {debugLog[0].filled}/{debugLog[0].total}
+                  {" fields)"}
+                </>
+              )}
+            </span>
+            <span>{showDebug ? "▾ hide" : "▸ show"}</span>
+          </button>
+          {showDebug && (
+            <div className="max-h-[420px] overflow-y-auto divide-y divide-zinc-800 bg-zinc-950 text-zinc-100 font-mono text-[11px]">
+              {debugLog.length === 0 && (
+                <div className="p-4 text-zinc-500 italic">
+                  No extraction events yet. Start listening and speak — every regex and AI pass will appear here.
+                </div>
+              )}
+              {debugLog.map((d) => {
+                const pct = Math.round(d.confidence * 100);
+                const tone =
+                  d.source === "ai-error"
+                    ? "bg-red-600 text-white"
+                    : d.source === "ai"
+                    ? "bg-emerald-600 text-white"
+                    : "bg-sky-600 text-white";
+                return (
+                  <div key={d.id} className="p-3 grid grid-cols-12 gap-3">
+                    <div className="col-span-2 space-y-1">
+                      <div className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${tone}`}>
+                        {d.source}
+                      </div>
+                      <div className="text-zinc-400 text-[10px]">
+                        {new Date(d.ts).toLocaleTimeString("en-GB", { hour12: false })}
+                      </div>
+                      {d.latencyMs !== undefined && (
+                        <div className="text-zinc-400 text-[10px]">{d.latencyMs} ms</div>
+                      )}
+                      <div className="text-[10px]">
+                        <span className="text-zinc-400">conf </span>
+                        <span className={pct >= 70 ? "text-emerald-400" : pct >= 40 ? "text-amber-300" : "text-red-400"}>
+                          {pct}%
+                        </span>
+                        <span className="text-zinc-500"> ({d.filled}/{d.total})</span>
+                      </div>
+                      {d.changed.length > 0 && (
+                        <div className="text-[10px] text-gold">Δ {d.changed.join(", ")}</div>
+                      )}
+                    </div>
+                    <div className="col-span-5">
+                      <div className="text-[10px] uppercase text-zinc-500 mb-1">Transcript sent</div>
+                      <pre className="whitespace-pre-wrap break-words text-zinc-200 max-h-40 overflow-y-auto">
+                        {d.transcript || "(empty)"}
+                      </pre>
+                    </div>
+                    <div className="col-span-5">
+                      <div className="text-[10px] uppercase text-zinc-500 mb-1">
+                        {d.error ? "Error" : "Raw extracted JSON"}
+                      </div>
+                      <pre className="whitespace-pre-wrap break-words text-emerald-300 max-h-40 overflow-y-auto">
+                        {d.error
+                          ? d.error
+                          : JSON.stringify(d.raw, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </>
