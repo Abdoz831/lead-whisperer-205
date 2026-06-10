@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/elip/UI";
 import {
@@ -9,10 +10,12 @@ import {
   WORK_DURATIONS,
   type Product,
 } from "@/lib/elip-data";
+import { extractLeadFromTranscript } from "@/lib/extract-lead.functions";
 
 export const Route = createFileRoute("/call-centre/assistant")({
   component: Assistant,
 });
+
 
 // ------------ Web Speech API typings (loose) ------------
 type SRConstructor = new () => SpeechRecognitionLike;
@@ -153,6 +156,7 @@ const FIELD_LABELS: Record<keyof Extracted, string> = {
 
 function Assistant() {
   const { addLead, currentUser } = useElip();
+  const extractFn = useServerFn(extractLeadFromTranscript);
   const [turns, setTurns] = useState<Turn[]>([
     { id: "ai-0", speaker: "ai", text: "Ready. Tap the mic and start your call. I'll transcribe live and fill the lead form as I detect details.", ts: Date.now() },
   ]);
@@ -162,6 +166,7 @@ function Assistant() {
   const [lang, setLang] = useState<"en-US" | "ar-JO">("en-US");
   const [supported, setSupported] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [aiThinking, setAiThinking] = useState(false);
 
   const recRef = useRef<SpeechRecognitionLike | null>(null);
   const speakerRef = useRef(speaker);
@@ -169,6 +174,10 @@ function Assistant() {
   const extractedRef = useRef(extracted);
   extractedRef.current = extracted;
   const scrollRef = useRef<HTMLDivElement>(null);
+  const aiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const aiSeqRef = useRef(0);
+  const lastSentRef = useRef("");
+
 
   // init recognition
   useEffect(() => {
@@ -184,6 +193,51 @@ function Assistant() {
     recRef.current = rec;
     return () => { try { rec.stop(); } catch { /* noop */ } };
   }, [lang]);
+
+  // AI extraction (debounced) — runs Lovable AI over the FULL conversation
+  function scheduleAiExtraction(allTurns: Turn[]) {
+    if (aiTimerRef.current) clearTimeout(aiTimerRef.current);
+    aiTimerRef.current = setTimeout(async () => {
+      const transcript = allTurns
+        .filter((t) => t.speaker !== "ai" && !t.interim)
+        .map((t) => `${t.speaker === "client" ? "Client" : "Agent"}: ${t.text}`)
+        .join("\n");
+      if (!transcript.trim() || transcript === lastSentRef.current) return;
+      lastSentRef.current = transcript;
+      const seq = ++aiSeqRef.current;
+      setAiThinking(true);
+      try {
+        const result = await extractFn({ data: { transcript } });
+        if (seq !== aiSeqRef.current) return;
+        const before = extractedRef.current;
+        // Merge: AI wins for non-empty values; never blank an existing value
+        const merged: Extracted = { ...before };
+        (Object.keys(result) as (keyof Extracted)[]).forEach((k) => {
+          const v = (result as Extracted)[k];
+          if (typeof v === "string" && v.trim()) {
+            (merged as Record<keyof Extracted, string>)[k] = v as string;
+          }
+        });
+        const changed = diffFields(before, merged);
+        if (changed.length) {
+          setExtracted(merged);
+          setTurns((prev) => [
+            ...prev,
+            {
+              id: `ai-${Date.now()}`,
+              speaker: "ai",
+              text: `🤖 AI updated: ${changed.map((k) => `${FIELD_LABELS[k]} → ${String(merged[k])}`).join(" · ")}`,
+              ts: Date.now(),
+            },
+          ]);
+        }
+      } catch (err) {
+        console.error("AI extraction failed", err);
+      } finally {
+        if (seq === aiSeqRef.current) setAiThinking(false);
+      }
+    }, 1200);
+  }
 
   // attach handlers
   useEffect(() => {
@@ -204,20 +258,13 @@ function Assistant() {
         setTurns((prev) => {
           const cleaned = prev.filter((p) => !p.interim);
           const next = [...cleaned, turn];
-          // run extraction on full client transcript so far
-          const clientFull = next.filter((n) => n.speaker === "client").map((n) => n.text).join(" ");
+          // 1. Fast local regex pass for instant pre-fill
+          const conv = next.filter((n) => n.speaker !== "ai" && !n.interim).map((n) => n.text).join(" ");
           const before = extractedRef.current;
-          const after = extractFromTranscript(clientFull, before);
-          const changed = diffFields(before, after);
-          if (changed.length) {
-            setExtracted(after);
-            next.push({
-              id: `ai-${Date.now()}`,
-              speaker: "ai",
-              text: `Detected: ${changed.map((k) => `${FIELD_LABELS[k]} → ${String(after[k])}`).join(" · ")}`,
-              ts: Date.now(),
-            });
-          }
+          const after = extractFromTranscript(conv, before);
+          if (diffFields(before, after).length) setExtracted(after);
+          // 2. Authoritative AI extraction (debounced)
+          scheduleAiExtraction(next);
           return next;
         });
       }
@@ -238,6 +285,7 @@ function Assistant() {
         try { rec.start(); } catch { /* noop */ }
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listening]);
 
   // auto scroll
@@ -388,7 +436,9 @@ function Assistant() {
         <div className="col-span-5 elip-card flex flex-col overflow-hidden">
           <div className="px-4 py-3 border-b bg-card flex items-center justify-between">
             <h2 className="text-sm font-bold text-navy">AI-Extracted Lead</h2>
-            <span className="text-[10px] bg-gold text-gold-foreground px-2 py-0.5 rounded font-bold">LIVE</span>
+            <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${aiThinking ? "bg-primary text-primary-foreground animate-pulse" : "bg-gold text-gold-foreground"}`}>
+              {aiThinking ? "AI THINKING…" : "LIVE"}
+            </span>
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-3 text-xs">
             <Field label="Customer Name" value={extracted.customer_name} onChange={(v) => setExtracted({ ...extracted, customer_name: v })} />
