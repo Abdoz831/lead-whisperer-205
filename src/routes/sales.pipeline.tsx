@@ -112,7 +112,7 @@ function Pipeline() {
       affiliate_redirect: redirect,
       group_salvage_status: redirect ? "Pending Consent" : "",
     });
-    toast.success(redirect ? "Lead queued for Group Salvage redirect. Customer will receive consent notification." : "Lead closed as rejected.");
+    toast.success(redirect ? "Lead queued for Etihad Affiliates redirect. Customer will receive consent notification." : "Lead closed as rejected.");
     setRejectLead(null);
   }
 
@@ -283,10 +283,10 @@ function Pipeline() {
       {rejectLead && (
         <Modal onClose={() => setRejectLead(null)} title="Reject Lead">
           <p className="text-sm mb-4">
-            This lead will be permanently removed from your pipeline. Would you like to redirect to <strong>Group Salvage</strong>? The customer will be referred to a sister institution.
+            This lead will be permanently removed from your pipeline. Would you like to redirect to <strong>Etihad Affiliates</strong>? The customer will be referred to a sister institution.
           </p>
           <div className="flex flex-col gap-2">
-            <button onClick={() => confirmReject(true)} className="bg-blue-600 text-white px-3 py-2 text-xs rounded font-semibold">Yes — Redirect to Group Salvage</button>
+            <button onClick={() => confirmReject(true)} className="bg-blue-600 text-white px-3 py-2 text-xs rounded font-semibold">Yes — Redirect to Etihad Affiliates</button>
             <button onClick={() => confirmReject(false)} className="bg-red-600 text-white px-3 py-2 text-xs rounded font-semibold">No — Close only</button>
             <button onClick={() => setRejectLead(null)} className="border px-3 py-2 text-xs rounded">Not yet</button>
           </div>
