@@ -32,7 +32,6 @@ const sections: Section[] = [
     links: [
       { to: "/sales/dashboard", label: "Pipeline Dashboard" },
       { to: "/sales/pipeline", label: "Active Pipeline" },
-      { to: "/sales/ledger", label: "Processed Ledger" },
     ],
   },
   {
@@ -47,6 +46,7 @@ const sections: Section[] = [
       { to: "/management/salvage", label: "Etihad Affiliates" },
       { to: "/management/reactivation", label: "Re-Activation Queue" },
       { to: "/sales/queue", label: "Leads Queue" },
+      { to: "/sales/ledger", label: "Processed Ledger" },
     ],
   },
 ];
