@@ -59,16 +59,46 @@ function Sidebar() {
   return (
       <aside className="w-64 shrink-0 bg-navy text-navy-foreground flex flex-col">
       <div className="px-5 py-5 border-b border-white/10">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-md bg-primary flex items-center justify-center shadow-sm">
-            <Sparkles className="w-5 h-5 text-primary-foreground" strokeWidth={2.25} />
-          </div>
-          <div>
-            <div className="font-bold tracking-tight text-base leading-tight">ELIP 2026</div>
-            <div className="text-[11px] text-white/60 leading-tight">Etihad Lead Intelligence Platform</div>
+        <div className="flex items-center gap-3">
+          {/* ELIP logo mark — Etihad-inspired bloom petals */}
+          <svg viewBox="0 0 40 40" className="w-10 h-10 shrink-0" aria-hidden="true">
+            <defs>
+              <linearGradient id="elipPetal" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="oklch(0.76 0.16 55)" />
+                <stop offset="100%" stopColor="oklch(0.62 0.18 42)" />
+              </linearGradient>
+            </defs>
+            <g transform="translate(20 20)">
+              {[0, 60, 120, 180, 240, 300].map((deg) => (
+                <ellipse
+                  key={deg}
+                  cx="0"
+                  cy="-9"
+                  rx="4.5"
+                  ry="9"
+                  fill="url(#elipPetal)"
+                  transform={`rotate(${deg})`}
+                  opacity="0.92"
+                />
+              ))}
+              <circle r="3.2" fill="white" />
+            </g>
+          </svg>
+          <div className="flex flex-col leading-none">
+            <div className="flex items-baseline gap-1.5">
+              <span className="font-black tracking-tight text-2xl text-white" style={{ fontFamily: '"Inter", system-ui, sans-serif', letterSpacing: '-0.04em' }}>
+                EL<span className="text-primary">i</span>P
+              </span>
+              <span className="text-[10px] font-semibold text-white/40 tracking-[0.2em]">2026</span>
+            </div>
+            <div className="text-[9.5px] uppercase tracking-[0.18em] text-white/55 mt-1">
+              Lead Intelligence
+            </div>
           </div>
         </div>
       </div>
+
+
 
 
       <nav className="flex-1 overflow-y-auto py-3 text-sm">
