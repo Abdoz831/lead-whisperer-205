@@ -134,7 +134,7 @@ function extractFromTranscript(full: string, prior: Extracted): Extracted {
   return out;
 }
 
-function diffFields(prev: Extracted, next: Extracted): string[] {
+function diffFields(prev: Extracted, next: Extracted): (keyof Extracted)[] {
   const keys = Object.keys(next) as (keyof Extracted)[];
   return keys.filter((k) => prev[k] !== next[k] && next[k] !== "");
 }
