@@ -42,6 +42,7 @@ type Turn = {
 type Extracted = {
   customer_name: string;
   phone_number: string;
+  date_of_birth: string;
   net_income_jod: string;
   other_income_jod: string;
   existing_obligations_jod: string;
