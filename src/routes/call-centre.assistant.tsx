@@ -190,6 +190,8 @@ function Assistant() {
   const [supported, setSupported] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [aiThinking, setAiThinking] = useState(false);
+  const [showDebug, setShowDebug] = useState(true);
+  const [debugLog, setDebugLog] = useState<DebugEntry[]>([]);
 
   const recRef = useRef<SpeechRecognitionLike | null>(null);
   const speakerRef = useRef(speaker);
@@ -200,6 +202,22 @@ function Assistant() {
   const aiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const aiSeqRef = useRef(0);
   const lastSentRef = useRef("");
+
+  function pushDebug(entry: Omit<DebugEntry, "id" | "ts">) {
+    setDebugLog((prev) => [
+      { id: `dbg-${Date.now()}-${Math.random()}`, ts: Date.now(), ...entry },
+      ...prev,
+    ].slice(0, 40));
+  }
+
+  function scoreConfidence(obj: Record<string, unknown>) {
+    const keys = Object.keys(EMPTY) as (keyof Extracted)[];
+    const filled = keys.filter((k) => {
+      const v = obj[k as string];
+      return typeof v === "string" && v.trim().length > 0;
+    }).length;
+    return { filled, total: keys.length, confidence: filled / keys.length };
+  }
 
 
   // init recognition
