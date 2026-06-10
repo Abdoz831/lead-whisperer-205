@@ -43,6 +43,11 @@ type Extracted = {
   customer_name: string;
   phone_number: string;
   net_income_jod: string;
+  other_income_jod: string;
+  existing_obligations_jod: string;
+  years_in_current_job: string;
+  dependents: string;
+  financial_notes: string;
   company_name: string;
   product: Product;
   financing_amount: string;
@@ -69,6 +74,11 @@ const EMPTY: Extracted = {
   customer_name: "",
   phone_number: "",
   net_income_jod: "",
+  other_income_jod: "",
+  existing_obligations_jod: "",
+  years_in_current_job: "",
+  dependents: "",
+  financial_notes: "",
   company_name: "",
   product: "Personal Loan",
   financing_amount: "",
@@ -274,11 +284,43 @@ function extractFromTranscript(full: string, prior: Extracted): Extracted {
 
   // Income — "salary 2000", "income 2500", "earn 1800"
   const incomePhrase = firstCapturedPhrase(t, [
-    /(?:salary|income|net\s+income|monthly\s+income|earn(?:ing)?s?|make|راتبي|دخلي)\s*(?:is|:|حوالي)?\s*([\w\u0600-\u06ff\s.,-]{2,40})(?=\s+(?:and|my|i|work|need|want|$)|[.,،]|$)/i,
+    /(?:salary|net\s+salary|net\s+income|monthly\s+(?:income|salary)|earn(?:ing)?s?|i\s+make|راتبي|دخلي)\s*(?:is|:|حوالي)?\s*([\w\u0600-\u06ff\s.,-]{2,40})(?=\s+(?:and|my|i|work|need|want|$)|[.,،]|$)/i,
   ]);
   if (incomePhrase) {
     const parsedIncome = parseMoneyPhrase(incomePhrase);
     if (parsedIncome) out.net_income_jod = parsedIncome;
+  }
+
+  // Other / additional monthly income
+  const otherIncPhrase = firstCapturedPhrase(t, [
+    /(?:additional\s+income|other\s+income|extra\s+income|side\s+income|rental\s+income|rent\s+from|business\s+income|spouse(?:'?s)?\s+(?:salary|income)|freelance|دخل\s+اضافي|دخل\s+إضافي)\s*(?:is|:|of|من|حوالي)?\s*([\w\u0600-\u06ff\s.,-]{2,40})(?=\s+(?:and|my|i|$)|[.,،]|$)/i,
+  ]);
+  if (otherIncPhrase) {
+    const v = parseMoneyPhrase(otherIncPhrase);
+    if (v) out.other_income_jod = v;
+  }
+
+  // Existing obligations / monthly debt
+  const oblPhrase = firstCapturedPhrase(t, [
+    /(?:existing\s+(?:loan|loans|obligations?)|monthly\s+(?:obligation|instal?ments?|payment)|current\s+loan|i\s+(?:already\s+)?(?:have|pay)\s+a?\s*loan|credit\s+card\s+(?:payment|bill)|قسط|أقساط|التزامات)\s*(?:of|is|:|من|حوالي)?\s*([\w\u0600-\u06ff\s.,-]{2,40})(?=\s+(?:and|my|i|$)|[.,،]|$)/i,
+  ]);
+  if (oblPhrase) {
+    const v = parseMoneyPhrase(oblPhrase);
+    if (v) out.existing_obligations_jod = v;
+  }
+
+  // Dependents
+  const depMatch = lower.match(/(\d+|one|two|three|four|five|six|seven)\s+(?:kids|children|dependents|dependants|اطفال|أطفال|اولاد|أولاد)/);
+  if (depMatch) {
+    const n = /^\d+$/.test(depMatch[1]) ? Number(depMatch[1]) : SMALL_NUMBERS[depMatch[1]];
+    if (n != null) out.dependents = String(n);
+  }
+
+  // Years in current job — "I've been there 5 years", "with them for 3 years"
+  const yrsMatch = lower.match(/(?:been\s+(?:there|with\s+them|in\s+this\s+job)|for|since)\s+(\d+(?:\.\d+)?|half\s+a)\s*(?:years?|yrs?|year|سنة|سنوات)/);
+  if (yrsMatch) {
+    const v = yrsMatch[1].startsWith("half") ? "0.5" : yrsMatch[1];
+    out.years_in_current_job = v;
   }
 
   // Product keywords
@@ -350,7 +392,12 @@ function diffFields(prev: Extracted, next: Extracted): (keyof Extracted)[] {
 const FIELD_LABELS: Record<keyof Extracted, string> = {
   customer_name: "Customer Name",
   phone_number: "Phone",
-  net_income_jod: "Net Income (JOD)",
+  net_income_jod: "Salary (JOD)",
+  other_income_jod: "Other Income (JOD)",
+  existing_obligations_jod: "Existing Obligations (JOD)",
+  years_in_current_job: "Years in Job",
+  dependents: "Dependents",
+  financial_notes: "Financial Notes",
   company_name: "Employer",
   product: "Product",
   financing_amount: "Amount (JOD)",
@@ -804,8 +851,17 @@ function Assistant() {
     const lines = turns
       .filter((t) => t.speaker !== "ai" && !t.interim)
       .map((t) => `${t.speaker === "client" ? "Client" : "Agent"}: ${t.text}`);
-    return lines.join("\n").slice(0, 500);
-  }, [turns]);
+    const conv = lines.join("\n");
+    const fin: string[] = [];
+    if (extracted.other_income_jod) fin.push(`Other income: JOD ${extracted.other_income_jod}/mo`);
+    if (extracted.existing_obligations_jod)
+      fin.push(`Existing obligations: JOD ${extracted.existing_obligations_jod}/mo`);
+    if (extracted.years_in_current_job) fin.push(`Tenure: ${extracted.years_in_current_job} yrs`);
+    if (extracted.dependents) fin.push(`Dependents: ${extracted.dependents}`);
+    if (extracted.financial_notes) fin.push(`Notes: ${extracted.financial_notes}`);
+    const finBlock = fin.length ? `\n\n— Financial Status —\n${fin.join(" · ")}` : "";
+    return (conv + finBlock).slice(0, 800);
+  }, [turns, extracted]);
 
   function submit() {
     const e: string[] = [];
@@ -1026,17 +1082,59 @@ function Assistant() {
                 onChange={(v) => setExtracted({ ...extracted, financing_amount: v })}
               />
               <Field
-                label="Net Income (JOD)"
+                label="Salary (JOD/month)"
                 value={extracted.net_income_jod}
                 onChange={(v) => setExtracted({ ...extracted, net_income_jod: v })}
               />
             </div>
+
+            <div className="rounded border border-emerald-200 bg-emerald-50/40 p-2.5 space-y-2">
+              <div className="text-[10px] uppercase font-bold text-emerald-800">
+                💰 Financial Status (additional)
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field
+                  label="Other Income (JOD/mo)"
+                  value={extracted.other_income_jod}
+                  onChange={(v) => setExtracted({ ...extracted, other_income_jod: v })}
+                />
+                <Field
+                  label="Existing Obligations (JOD/mo)"
+                  value={extracted.existing_obligations_jod}
+                  onChange={(v) => setExtracted({ ...extracted, existing_obligations_jod: v })}
+                />
+                <Field
+                  label="Years in Current Job"
+                  value={extracted.years_in_current_job}
+                  onChange={(v) => setExtracted({ ...extracted, years_in_current_job: v })}
+                />
+                <Field
+                  label="Dependents"
+                  value={extracted.dependents}
+                  onChange={(v) => setExtracted({ ...extracted, dependents: v })}
+                />
+              </div>
+              <div>
+                <div className="text-[10px] uppercase font-semibold text-zinc-500 mb-1">
+                  Financial Notes (assets, other banks, history…)
+                </div>
+                <textarea
+                  value={extracted.financial_notes}
+                  onChange={(e) => setExtracted({ ...extracted, financial_notes: e.target.value })}
+                  rows={2}
+                  className={`w-full border rounded px-2 py-1.5 text-xs ${extracted.financial_notes ? "bg-gold/5 border-gold/40" : "border-zinc-300"}`}
+                  placeholder="—"
+                />
+              </div>
+            </div>
+
             <Select
               label="Channel"
               value={extracted.channel}
               options={CHANNELS as unknown as string[]}
               onChange={(v) => setExtracted({ ...extracted, channel: v })}
             />
+
 
             <div>
               <div className="text-[10px] uppercase font-semibold text-zinc-500 mb-1">
@@ -1050,7 +1148,7 @@ function Assistant() {
                 )}
               </div>
               <div className="text-[10px] text-right text-muted-foreground mt-0.5">
-                {ccNotes.length} / 500
+                {ccNotes.length} / 800
               </div>
             </div>
           </div>
