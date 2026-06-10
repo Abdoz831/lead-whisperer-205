@@ -200,7 +200,7 @@ function extractFromTranscript(full: string, prior: Extracted): Extracted {
   // Phone: numeric or spoken digits, Jordanian/UAE/GCC/international, English or Arabic prompts
   const phonePhrase = firstCapturedPhrase(t, [
     /(?:phone(?:\s+number)?|mobile|number|call\s+me\s+on|رقمي|هاتفي|موبايلي)\s*(?:is|:|هو)?\s*([+\d\s()\-]{7,35})(?=\s+(?:and|my|i|salary|income|work|need|want|$)|[.,،]|$)/i,
-    /(?:phone(?:\s+number)?|mobile|number|call\s+me\s+on)\s*(?:is|:)?\s*((?:plus|double|triple|zero|oh|o|one|two|three|four|five|six|seven|eight|nine|\s|-){14,})(?=\s+(?:and|my|i|salary|income|work|need|want|$)|[.,]|$)/i,
+    /(?:phone(?:\s+number)?|mobile|number|call\s+me\s+on)\s*(?:is|:)?\s*((?:plus|double|triple|zero|oh|one|two|three|four|five|six|seven|eight|nine|o|\s|-){14,})(?=\s+(?:and|my|i|salary|income|work|need|want|$)|[.,]|$)/i,
     /(\+?962[\s-]?\d[\s-]?\d{3}[\s-]?\d{4}|\b07[789][\s-]?\d{3}[\s-]?\d{4}\b|(?:\+|00)\d[\d\s()-]{7,24}\d)/,
   ]);
   if (phonePhrase) {
