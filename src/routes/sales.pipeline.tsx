@@ -20,7 +20,11 @@ function Pipeline() {
   const [showBriefing, setShowBriefing] = useState<Lead | null>(null);
   const [rejectLead, setRejectLead] = useState<Lead | null>(null);
 
-  async function runEnrich(l: Lead) {
+  const enrichingRef = useRef<Set<string>>(new Set());
+
+  async function runEnrich(l: Lead, opts: { silent?: boolean } = {}) {
+    if (enrichingRef.current.has(l.lead_id)) return;
+    enrichingRef.current.add(l.lead_id);
     updateLead(l.lead_id, { enrichment_status: "loading", enrichment_error: "" });
     try {
       const result = await enrichFn({
@@ -35,12 +39,16 @@ function Pipeline() {
         },
       });
       updateLead(l.lead_id, { enrichment: result, enrichment_status: "idle" });
-      setExpanded(l.lead_id);
-      toast.success(`Social intel + sales playbook ready for ${l.customer_name}`);
+      if (!opts.silent) {
+        setExpanded(l.lead_id);
+        toast.success(`Social intel + sales playbook ready for ${l.customer_name}`);
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Failed to enrich lead";
       updateLead(l.lead_id, { enrichment_status: "error", enrichment_error: msg });
-      toast.error(msg);
+      if (!opts.silent) toast.error(msg);
+    } finally {
+      enrichingRef.current.delete(l.lead_id);
     }
   }
 
