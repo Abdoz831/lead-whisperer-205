@@ -72,6 +72,18 @@ function SalesDashboard() {
     [leads],
   );
 
+  const queueLowPrio = useMemo(
+    () =>
+      leads
+        .filter(
+          (l) =>
+            l.current_status === "Queued" && (l.priority === "P3" || l.priority === "P4"),
+        )
+        .sort((a, b) => (b.ai_score || 0) - (a.ai_score || 0)),
+    [leads],
+  );
+
+
   return (
     <>
       <PageHeader
