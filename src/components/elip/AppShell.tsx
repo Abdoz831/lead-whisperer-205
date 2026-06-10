@@ -8,8 +8,7 @@ const sections = [
     icon: "📞",
     roles: ["cc"] as Role[],
     links: [
-      { to: "/call-centre/new-lead", label: "New Lead Entry" },
-      { to: "/call-centre/submissions", label: "My Submissions" },
+      { to: "/call-centre/assistant", label: "AI Call Assistant" },
     ],
   },
   {
