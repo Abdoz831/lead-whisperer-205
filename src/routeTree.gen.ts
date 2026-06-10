@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CallCentreSubmissionsRouteImport } from './routes/call-centre.submissions'
 import { Route as CallCentreNewLeadRouteImport } from './routes/call-centre.new-lead'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CallCentreSubmissionsRoute = CallCentreSubmissionsRouteImport.update({
+  id: '/call-centre/submissions',
+  path: '/call-centre/submissions',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CallCentreNewLeadRoute = CallCentreNewLeadRouteImport.update({
@@ -26,27 +32,31 @@ const CallCentreNewLeadRoute = CallCentreNewLeadRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/call-centre/new-lead': typeof CallCentreNewLeadRoute
+  '/call-centre/submissions': typeof CallCentreSubmissionsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/call-centre/new-lead': typeof CallCentreNewLeadRoute
+  '/call-centre/submissions': typeof CallCentreSubmissionsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/call-centre/new-lead': typeof CallCentreNewLeadRoute
+  '/call-centre/submissions': typeof CallCentreSubmissionsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/call-centre/new-lead'
+  fullPaths: '/' | '/call-centre/new-lead' | '/call-centre/submissions'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/call-centre/new-lead'
-  id: '__root__' | '/' | '/call-centre/new-lead'
+  to: '/' | '/call-centre/new-lead' | '/call-centre/submissions'
+  id: '__root__' | '/' | '/call-centre/new-lead' | '/call-centre/submissions'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CallCentreNewLeadRoute: typeof CallCentreNewLeadRoute
+  CallCentreSubmissionsRoute: typeof CallCentreSubmissionsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -56,6 +66,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/call-centre/submissions': {
+      id: '/call-centre/submissions'
+      path: '/call-centre/submissions'
+      fullPath: '/call-centre/submissions'
+      preLoaderRoute: typeof CallCentreSubmissionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/call-centre/new-lead': {
@@ -71,6 +88,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CallCentreNewLeadRoute: CallCentreNewLeadRoute,
+  CallCentreSubmissionsRoute: CallCentreSubmissionsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
