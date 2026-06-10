@@ -261,6 +261,7 @@ function Assistant() {
       lastSentRef.current = transcript;
       const seq = ++aiSeqRef.current;
       setAiThinking(true);
+      const startedAt = Date.now();
       try {
         const result = await extractFn({ data: { transcript } });
         if (seq !== aiSeqRef.current) return;
@@ -274,6 +275,17 @@ function Assistant() {
           }
         });
         const changed = diffFields(before, merged);
+        const score = scoreConfidence(result as unknown as Record<string, unknown>);
+        pushDebug({
+          source: "ai",
+          transcript,
+          raw: result,
+          confidence: score.confidence,
+          filled: score.filled,
+          total: score.total,
+          changed: changed.map((k) => FIELD_LABELS[k]),
+          latencyMs: Date.now() - startedAt,
+        });
         if (changed.length) {
           setExtracted(merged);
           setTurns((prev) => [
@@ -288,6 +300,17 @@ function Assistant() {
         }
       } catch (err) {
         console.error("AI extraction failed", err);
+        pushDebug({
+          source: "ai-error",
+          transcript,
+          raw: null,
+          confidence: 0,
+          filled: 0,
+          total: Object.keys(EMPTY).length,
+          changed: [],
+          latencyMs: Date.now() - startedAt,
+          error: err instanceof Error ? err.message : String(err),
+        });
       } finally {
         if (seq === aiSeqRef.current) setAiThinking(false);
       }
