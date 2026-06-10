@@ -156,6 +156,7 @@ const FIELD_LABELS: Record<keyof Extracted, string> = {
 
 function Assistant() {
   const { addLead, currentUser } = useElip();
+  const extractFn = useServerFn(extractLeadFromTranscript);
   const [turns, setTurns] = useState<Turn[]>([
     { id: "ai-0", speaker: "ai", text: "Ready. Tap the mic and start your call. I'll transcribe live and fill the lead form as I detect details.", ts: Date.now() },
   ]);
@@ -165,6 +166,7 @@ function Assistant() {
   const [lang, setLang] = useState<"en-US" | "ar-JO">("en-US");
   const [supported, setSupported] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [aiThinking, setAiThinking] = useState(false);
 
   const recRef = useRef<SpeechRecognitionLike | null>(null);
   const speakerRef = useRef(speaker);
@@ -172,6 +174,10 @@ function Assistant() {
   const extractedRef = useRef(extracted);
   extractedRef.current = extracted;
   const scrollRef = useRef<HTMLDivElement>(null);
+  const aiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const aiSeqRef = useRef(0);
+  const lastSentRef = useRef("");
+
 
   // init recognition
   useEffect(() => {
