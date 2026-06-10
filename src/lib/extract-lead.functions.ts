@@ -8,7 +8,12 @@ const Input = z.object({ transcript: z.string().min(1).max(20000) });
 const Schema = z.object({
   customer_name: z.string().describe("Full client name as spoken; empty if not stated"),
   phone_number: z.string().describe("Phone number exactly/normalised from speech, including international formats like 0097150219044 or +97150219044; empty if none"),
-  net_income_jod: z.string().describe("Monthly net income in JOD as bare integer string; empty if not stated"),
+  net_income_jod: z.string().describe("Monthly net SALARY in JOD as bare integer string; empty if not stated"),
+  other_income_jod: z.string().describe("Any ADDITIONAL monthly income in JOD (rental, business, spouse, freelance) as bare integer string; empty if none stated"),
+  existing_obligations_jod: z.string().describe("Total monthly debt obligations / existing loan instalments / credit card payments in JOD as bare integer string; empty if none stated"),
+  years_in_current_job: z.string().describe("How long the client has been at the current employer, in years as a decimal string (e.g. '0.5', '2', '7'); empty if not stated"),
+  dependents: z.string().describe("Number of dependents (spouse, children, parents financially supported) as bare integer string; empty if not stated"),
+  financial_notes: z.string().describe("Free-text summary of any extra financial-status details the client mentioned: assets, property owned, other bank relationships, savings, side business, credit history, prior rejections, anything relevant to underwriting. Empty if nothing extra."),
   company_name: z.string().describe("Current employer / company name; empty if none"),
   job_title: z.string().describe("Job title/role; empty if none"),
   product: z.enum([
