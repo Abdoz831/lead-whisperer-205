@@ -31,7 +31,6 @@ const sections: Section[] = [
     roles: ["rlm"],
     links: [
       { to: "/sales/dashboard", label: "Pipeline Dashboard" },
-      { to: "/sales/queue", label: "Leads Queue" },
       { to: "/sales/pipeline", label: "Active Pipeline" },
       { to: "/sales/ledger", label: "Processed Ledger" },
     ],
@@ -47,6 +46,7 @@ const sections: Section[] = [
       { to: "/management/recall", label: "Re-Call Schedule" },
       { to: "/management/salvage", label: "Etihad Affiliates" },
       { to: "/management/reactivation", label: "Re-Activation Queue" },
+      { to: "/sales/queue", label: "Leads Queue" },
     ],
   },
 ];
