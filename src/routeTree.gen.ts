@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SalesRecallRouteImport } from './routes/sales.recall'
 import { Route as SalesQueueRouteImport } from './routes/sales.queue'
 import { Route as SalesPipelineRouteImport } from './routes/sales.pipeline'
 import { Route as CallCentreSubmissionsRouteImport } from './routes/call-centre.submissions'
@@ -18,6 +19,11 @@ import { Route as CallCentreNewLeadRouteImport } from './routes/call-centre.new-
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SalesRecallRoute = SalesRecallRouteImport.update({
+  id: '/sales/recall',
+  path: '/sales/recall',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SalesQueueRoute = SalesQueueRouteImport.update({
@@ -47,6 +53,7 @@ export interface FileRoutesByFullPath {
   '/call-centre/submissions': typeof CallCentreSubmissionsRoute
   '/sales/pipeline': typeof SalesPipelineRoute
   '/sales/queue': typeof SalesQueueRoute
+  '/sales/recall': typeof SalesRecallRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByTo {
   '/call-centre/submissions': typeof CallCentreSubmissionsRoute
   '/sales/pipeline': typeof SalesPipelineRoute
   '/sales/queue': typeof SalesQueueRoute
+  '/sales/recall': typeof SalesRecallRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,6 +70,7 @@ export interface FileRoutesById {
   '/call-centre/submissions': typeof CallCentreSubmissionsRoute
   '/sales/pipeline': typeof SalesPipelineRoute
   '/sales/queue': typeof SalesQueueRoute
+  '/sales/recall': typeof SalesRecallRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -71,6 +80,7 @@ export interface FileRouteTypes {
     | '/call-centre/submissions'
     | '/sales/pipeline'
     | '/sales/queue'
+    | '/sales/recall'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -78,6 +88,7 @@ export interface FileRouteTypes {
     | '/call-centre/submissions'
     | '/sales/pipeline'
     | '/sales/queue'
+    | '/sales/recall'
   id:
     | '__root__'
     | '/'
@@ -85,6 +96,7 @@ export interface FileRouteTypes {
     | '/call-centre/submissions'
     | '/sales/pipeline'
     | '/sales/queue'
+    | '/sales/recall'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -93,6 +105,7 @@ export interface RootRouteChildren {
   CallCentreSubmissionsRoute: typeof CallCentreSubmissionsRoute
   SalesPipelineRoute: typeof SalesPipelineRoute
   SalesQueueRoute: typeof SalesQueueRoute
+  SalesRecallRoute: typeof SalesRecallRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -102,6 +115,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sales/recall': {
+      id: '/sales/recall'
+      path: '/sales/recall'
+      fullPath: '/sales/recall'
+      preLoaderRoute: typeof SalesRecallRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sales/queue': {
@@ -141,6 +161,7 @@ const rootRouteChildren: RootRouteChildren = {
   CallCentreSubmissionsRoute: CallCentreSubmissionsRoute,
   SalesPipelineRoute: SalesPipelineRoute,
   SalesQueueRoute: SalesQueueRoute,
+  SalesRecallRoute: SalesRecallRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
