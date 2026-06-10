@@ -798,6 +798,42 @@ function Assistant() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [extracted, autoAsk, aiThinking]);
 
+  // Auto-submit to Sales Queue once every required field is valid.
+  const submittedRef = useRef(false);
+  useEffect(() => {
+    if (submittedRef.current) return;
+    const isValid =
+      extracted.customer_name.trim().length >= 3 &&
+      /^[+\d][\d\s+()-]{6,}$/.test(extracted.phone_number) &&
+      extracted.company_name.trim().length >= 2 &&
+      extracted.job_title.trim().length >= 2 &&
+      !!extracted.net_income_jod &&
+      !isNaN(Number(extracted.net_income_jod)) &&
+      Number(extracted.net_income_jod) > 0 &&
+      !!extracted.financing_amount &&
+      !isNaN(Number(extracted.financing_amount)) &&
+      Number(extracted.financing_amount) > 0 &&
+      ccNotes.length >= 20;
+    if (!isValid) return;
+    submittedRef.current = true;
+    autoAskRef.current = false;
+    setAutoAsk(false);
+    const t = setTimeout(() => {
+      void (async () => {
+        await speak(
+          langRef.current === "ar-JO"
+            ? "تمام، كل المعلومات اكتملت. رح أرسل الطلب لفريق المبيعات الآن."
+            : "All information is complete. Sending your application to the sales team now.",
+        );
+        submit();
+      })();
+    }, 600);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [extracted, ccNotes]);
+
+
+
 
   const ccNotes = useMemo(() => {
     const lines = turns
