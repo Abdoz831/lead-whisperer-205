@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as SalesRecallRouteImport } from './routes/sales.recall'
 import { Route as SalesQueueRouteImport } from './routes/sales.queue'
 import { Route as SalesPipelineRouteImport } from './routes/sales.pipeline'
 import { Route as SalesLedgerRouteImport } from './routes/sales.ledger'
@@ -26,11 +25,6 @@ import { Route as CallCentreAssistantRouteImport } from './routes/call-centre.as
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SalesRecallRoute = SalesRecallRouteImport.update({
-  id: '/sales/recall',
-  path: '/sales/recall',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SalesQueueRoute = SalesQueueRouteImport.update({
@@ -102,7 +96,6 @@ export interface FileRoutesByFullPath {
   '/sales/ledger': typeof SalesLedgerRoute
   '/sales/pipeline': typeof SalesPipelineRoute
   '/sales/queue': typeof SalesQueueRoute
-  '/sales/recall': typeof SalesRecallRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -117,7 +110,6 @@ export interface FileRoutesByTo {
   '/sales/ledger': typeof SalesLedgerRoute
   '/sales/pipeline': typeof SalesPipelineRoute
   '/sales/queue': typeof SalesQueueRoute
-  '/sales/recall': typeof SalesRecallRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -133,7 +125,6 @@ export interface FileRoutesById {
   '/sales/ledger': typeof SalesLedgerRoute
   '/sales/pipeline': typeof SalesPipelineRoute
   '/sales/queue': typeof SalesQueueRoute
-  '/sales/recall': typeof SalesRecallRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -150,7 +141,6 @@ export interface FileRouteTypes {
     | '/sales/ledger'
     | '/sales/pipeline'
     | '/sales/queue'
-    | '/sales/recall'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -165,7 +155,6 @@ export interface FileRouteTypes {
     | '/sales/ledger'
     | '/sales/pipeline'
     | '/sales/queue'
-    | '/sales/recall'
   id:
     | '__root__'
     | '/'
@@ -180,7 +169,6 @@ export interface FileRouteTypes {
     | '/sales/ledger'
     | '/sales/pipeline'
     | '/sales/queue'
-    | '/sales/recall'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -196,7 +184,6 @@ export interface RootRouteChildren {
   SalesLedgerRoute: typeof SalesLedgerRoute
   SalesPipelineRoute: typeof SalesPipelineRoute
   SalesQueueRoute: typeof SalesQueueRoute
-  SalesRecallRoute: typeof SalesRecallRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -206,13 +193,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sales/recall': {
-      id: '/sales/recall'
-      path: '/sales/recall'
-      fullPath: '/sales/recall'
-      preLoaderRoute: typeof SalesRecallRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sales/queue': {
@@ -308,8 +288,17 @@ const rootRouteChildren: RootRouteChildren = {
   SalesLedgerRoute: SalesLedgerRoute,
   SalesPipelineRoute: SalesPipelineRoute,
   SalesQueueRoute: SalesQueueRoute,
-  SalesRecallRoute: SalesRecallRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
