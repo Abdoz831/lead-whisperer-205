@@ -851,8 +851,17 @@ function Assistant() {
     const lines = turns
       .filter((t) => t.speaker !== "ai" && !t.interim)
       .map((t) => `${t.speaker === "client" ? "Client" : "Agent"}: ${t.text}`);
-    return lines.join("\n").slice(0, 500);
-  }, [turns]);
+    const conv = lines.join("\n");
+    const fin: string[] = [];
+    if (extracted.other_income_jod) fin.push(`Other income: JOD ${extracted.other_income_jod}/mo`);
+    if (extracted.existing_obligations_jod)
+      fin.push(`Existing obligations: JOD ${extracted.existing_obligations_jod}/mo`);
+    if (extracted.years_in_current_job) fin.push(`Tenure: ${extracted.years_in_current_job} yrs`);
+    if (extracted.dependents) fin.push(`Dependents: ${extracted.dependents}`);
+    if (extracted.financial_notes) fin.push(`Notes: ${extracted.financial_notes}`);
+    const finBlock = fin.length ? `\n\n— Financial Status —\n${fin.join(" · ")}` : "";
+    return (conv + finBlock).slice(0, 800);
+  }, [turns, extracted]);
 
   function submit() {
     const e: string[] = [];
