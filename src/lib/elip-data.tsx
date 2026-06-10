@@ -121,7 +121,39 @@ export function calcBestTime(company: string): string {
   if (/bank|بنك/i.test(company)) return "12:30 PM — Banker lunch break, 83% answer rate";
   if (/جامعة|university/i.test(company)) return "2:00 PM — Academic break, 79% answer rate";
   if (/military|security|أمن|عسكر/i.test(company)) return "5:30 PM — Post-duty hours, 88% answer rate";
+  void c;
   return "8:30 AM — Before morning meetings, 76% answer rate";
+}
+
+// Parse the leading "HH:MM AM/PM" portion of a best_time_to_call string into a 24h hour.
+export function bestTimeHour(bestTime: string): number | null {
+  const m = bestTime.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+  if (!m) return null;
+  let h = Number(m[1]);
+  const isPm = m[3].toUpperCase() === "PM";
+  if (isPm && h !== 12) h += 12;
+  if (!isPm && h === 12) h = 0;
+  return h;
+}
+
+// True when "now" is within ±1h of the best-call window.
+export function isWithinBestWindow(bestTime: string, now: Date = new Date()): boolean {
+  const h = bestTimeHour(bestTime);
+  if (h === null) return false;
+  const diff = Math.abs(now.getHours() + now.getMinutes() / 60 - h);
+  return diff <= 1;
+}
+
+// Rank seniority from job title — drives priority boost for high-positioned clients.
+export function jobSeniorityBoost(title: string | undefined): number {
+  if (!title) return 0;
+  const t = title.toLowerCase();
+  if (/(chief|ceo|cfo|coo|cto|president|chairman|owner|founder|managing\s+director|director\s+general|secretary\s+general|minister|general\s+manager)/i.test(t)) return 18;
+  if (/(director|vp|vice\s+president|head\s+of|partner|principal|عميد|مدير\s+عام)/i.test(t)) return 12;
+  if (/(senior\s+manager|deputy|associate\s+director|مدير)/i.test(t)) return 9;
+  if (/(manager|lead|supervisor|consultant|architect|specialist\s+lead)/i.test(t)) return 6;
+  if (/(senior|engineer|analyst|officer|accountant|teacher|nurse|doctor|physician)/i.test(t)) return 3;
+  return 0;
 }
 
 function stableHash(value: string): number {
@@ -133,20 +165,40 @@ function stableHash(value: string): number {
 }
 
 export function calcAIScore(l: Partial<Lead>): { score: number; priority: Priority } {
-  let s = 40;
+  let s = 35;
+
+  // Financing amount — bigger deals get more priority.
   const amt = l.financing_amount ?? 0;
-  if (amt > 100000) s += 25;
-  else if (amt > 50000) s += 15;
-  else if (amt > 20000) s += 8;
+  if (amt >= 250000) s += 30;
+  else if (amt >= 100000) s += 22;
+  else if (amt >= 50000) s += 14;
+  else if (amt >= 20000) s += 7;
+
+  // Income / repayment capacity.
   const inc = l.net_income_jod ?? 0;
-  if (inc > 2000) s += 15;
-  else if (inc > 1000) s += 8;
+  if (inc >= 3000) s += 14;
+  else if (inc >= 2000) s += 10;
+  else if (inc >= 1000) s += 5;
+
+  // Product weight (LPW).
   const p = l.product as Product | undefined;
-  if (p && LPW[p] >= 4) s += 15;
-  else if (p && LPW[p] >= 2) s += 8;
-  if (/وزارة|ministry|government/i.test(l.company_name ?? "")) s += 10;
-  s = Math.min(100, Math.max(10, s + (stableHash(`${l.customer_name ?? ""}|${l.phone_number ?? ""}|${l.company_name ?? ""}|${l.product ?? ""}|${amt}|${inc}`) % 6)));
-  const priority: Priority = s >= 86 ? "P1" : s >= 70 ? "P2" : s >= 50 ? "P3" : "P4";
+  if (p && LPW[p] >= 4) s += 12;
+  else if (p && LPW[p] >= 2) s += 7;
+
+  // Company positioning — government, blue-chip employers.
+  const company = l.company_name ?? "";
+  if (/وزارة|ministry|government|royal|presidency/i.test(company)) s += 12;
+  else if (/bank|بنك|aramco|telecom|orange|zain|royal\s+jordanian|pwc|kpmg|deloitte|ey|hospital|university/i.test(company)) s += 6;
+
+  // Client seniority — CEO/Director/Manager drive priority up.
+  s += jobSeniorityBoost(l.job_title);
+
+  // Best-time-to-call alignment — call now if their window is now.
+  const bestTime = l.best_time_to_call ?? calcBestTime(company);
+  if (isWithinBestWindow(bestTime)) s += 6;
+
+  s = Math.min(100, Math.max(10, s + (stableHash(`${l.customer_name ?? ""}|${l.phone_number ?? ""}|${company}|${p ?? ""}|${amt}|${inc}`) % 4)));
+  const priority: Priority = s >= 82 ? "P1" : s >= 65 ? "P2" : s >= 48 ? "P3" : "P4";
   return { score: s, priority };
 }
 
