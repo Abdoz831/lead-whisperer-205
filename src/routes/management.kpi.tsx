@@ -25,7 +25,7 @@ function KPIPage() {
           <KPICard label="Pipeline Under Mgmt" value="JOD 1,503,748" sub="13 active units" status={{ text: "ON TRACK", tone: "ok" }} accent="navy" />
           <KPICard label="Churn Alerts" value="3 active" sub="2 leads >48h stagnant" status={{ text: "⚠️ ACTION NEEDED", tone: "warn" }} accent="orange" />
           <KPICard label="Workload Index" value="1.8x" sub="Max allowed 2.5x" status={{ text: "BALANCED", tone: "ok" }} accent="green" />
-          <KPICard label="Group Salvage Recovery" value="0%" sub="Target 20% (Phase 3)" status={{ text: "NOT ACTIVE", tone: "muted" }} accent="gold" />
+          <KPICard label="Etihad Affiliates Recovery" value="0%" sub="Target 20% (Phase 3)" status={{ text: "NOT ACTIVE", tone: "muted" }} accent="gold" />
         </div>
 
         <div className="elip-card overflow-hidden">
