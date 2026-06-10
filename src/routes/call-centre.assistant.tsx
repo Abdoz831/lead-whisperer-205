@@ -909,6 +909,22 @@ function Assistant() {
                   <span className="text-base">{listening ? "■" : "🎙"}</span>
                   {listening ? "Stop Listening" : "Start Listening"}
                 </button>
+                <button
+                  onClick={autoAsk ? stopAutoAsk : startAutoAsk}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-full text-xs font-semibold transition-colors ${
+                    autoAsk
+                      ? "bg-amber-500 text-white animate-pulse"
+                      : "bg-emerald-600 text-white hover:opacity-90"
+                  }`}
+                  title="Voice-prompt the client for any missing required information"
+                >
+                  <span className="text-sm">{speaking ? "🔊" : autoAsk ? "⏸" : "🤖"}</span>
+                  {autoAsk
+                    ? speaking
+                      ? "Asking…"
+                      : "Stop Auto-Ask"
+                    : "Ask Missing Info"}
+
                 <div className="text-[11px] text-muted-foreground flex-1">
                   {listening
                     ? "Listening… speak normally. Tap Tag-as to switch speakers."
