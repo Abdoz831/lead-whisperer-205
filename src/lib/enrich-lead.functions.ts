@@ -87,17 +87,19 @@ export const enrichLead = createServerFn({ method: "POST" })
       .join("\n\n");
 
     const gateway = createLovableAiGatewayProvider(lovableKey);
-    const { object } = await generateObject({
+
+    const callArgs = {
       model: gateway("google/gemini-3-flash-preview"),
       schema: OutSchema,
-      maxOutputTokens: 2048,
+      maxOutputTokens: 4096,
       system:
         "You are a world-class retail-banking sales coach for Bank al Etihad in Jordan. " +
         "You receive (a) basic CRM facts about a prospect and (b) raw public/social-media search snippets about them. " +
         "Your job: build a sharp profile and a sales playbook the RLM can use on the very next call. " +
         "MATCHING RULES — be strict: a snippet only matches the CRM person if name + (company OR job title OR location 'Jordan' OR birth year) line up. " +
         "If matches are weak or ambiguous (common name, different country, different employer, age mismatch), set confidence='low' and explicitly say the public footprint is unclear; do NOT fabricate biography. " +
-        "Tailor talking points to the client's company, seniority, life stage (age from DOB) and the specific product/amount. Use a respectful Jordanian business tone. Keep everything actionable, concrete, no fluff.",
+        "Tailor talking points to the client's company, seniority, life stage (age from DOB) and the specific product/amount. Use a respectful Jordanian business tone. Keep everything actionable, concrete, no fluff. " +
+        "ALWAYS return valid JSON matching the schema exactly — include every field, keep arrays short (3-4 items) so the response is not truncated.",
       prompt:
         `CRM FACTS (use ALL of these to match the right person):\n` +
         `- Name: ${data.customer_name}\n` +
@@ -112,7 +114,24 @@ export const enrichLead = createServerFn({ method: "POST" })
         `- Monthly income: JOD ${data.net_income_jod || 0}\n` +
         `- Contact-centre notes: ${data.cc_notes || "(none)"}\n\n` +
         `PUBLIC/SOCIAL SEARCH RESULTS (Jordan-targeted, Tavily over LinkedIn/Twitter/news):\n${evidence || "(no results returned by web search)"}\n`,
-    });
+    } as const;
+
+    let object: z.infer<typeof OutSchema>;
+    try {
+      const r = await generateObject(callArgs);
+      object = r.object;
+    } catch {
+      // Retry once with a tighter token budget hint and simpler instruction
+      const r = await generateObject({
+        ...callArgs,
+        maxOutputTokens: 3072,
+        prompt:
+          callArgs.prompt +
+          `\n\nReturn ONLY the JSON object. Keep talking_points to exactly 3 items and objection_handlers to exactly 2 items.`,
+      });
+      object = r.object;
+    }
+
 
     return {
       ...object,
