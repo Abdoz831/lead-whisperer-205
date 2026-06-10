@@ -252,6 +252,72 @@ function SalesDashboard() {
           </div>
         </div>
 
+        {/* Leads Queue — P3 / P4 awaiting manual review */}
+        <div className="elip-card overflow-hidden">
+          <div className="px-4 py-3 border-b bg-zinc-50 flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-navy text-sm">📥 Leads Queue — P3 / P4 (Manual Review)</h3>
+              <p className="text-[11px] text-muted-foreground">
+                Lower-priority leads waiting in the Sales Queue. P1 / P2 are auto-accepted into Active Pipeline.
+              </p>
+            </div>
+            <span className="text-xs font-semibold bg-zinc-200 text-zinc-800 px-2 py-0.5 rounded">
+              {queueLowPrio.length}
+            </span>
+          </div>
+          <table className="w-full text-xs">
+            <thead className="bg-zinc-50 text-zinc-600 text-[10px] uppercase tracking-wider">
+              <tr>
+                <th className="text-left px-3 py-2 font-semibold">Priority</th>
+                <th className="text-left px-3 py-2 font-semibold">Customer</th>
+                <th className="text-left px-3 py-2 font-semibold">Company</th>
+                <th className="text-left px-3 py-2 font-semibold">Product</th>
+                <th className="text-left px-3 py-2 font-semibold">Amount</th>
+                <th className="text-left px-3 py-2 font-semibold">AI Score</th>
+                <th className="text-left px-3 py-2 font-semibold">Best Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              {queueLowPrio.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="text-center p-6 text-muted-foreground text-xs">
+                    No P3 / P4 leads waiting in queue.
+                  </td>
+                </tr>
+              )}
+              {queueLowPrio.map((l) => (
+                <tr key={l.lead_id} className="border-t hover:bg-zinc-50">
+                  <td className="px-3 py-2">
+                    <span
+                      className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        l.priority === "P3"
+                          ? "bg-amber-100 text-amber-900"
+                          : "bg-zinc-200 text-zinc-800"
+                      }`}
+                    >
+                      {l.priority}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2 font-semibold text-navy">{l.customer_name}</td>
+                  <td className="px-3 py-2 text-[11px]">{l.company_name}</td>
+                  <td className="px-3 py-2 text-[11px]">{l.product}</td>
+                  <td className="px-3 py-2 tabular-nums text-[11px]">
+                    JOD {l.financing_amount.toLocaleString()}
+                  </td>
+                  <td className="px-3 py-2 font-semibold tabular-nums">{l.ai_score}</td>
+                  <td className="px-3 py-2">
+                    <span className="px-2 py-0.5 rounded bg-zinc-100 text-zinc-800 text-[10px] font-semibold">
+                      {l.best_time_to_call}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+
+
         <div className="flex gap-3 text-xs">
           <Link
             to="/sales/queue"
