@@ -1148,7 +1148,7 @@ function Assistant() {
                 )}
               </div>
               <div className="text-[10px] text-right text-muted-foreground mt-0.5">
-                {ccNotes.length} / 500
+                {ccNotes.length} / 800
               </div>
             </div>
           </div>
