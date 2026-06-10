@@ -55,7 +55,7 @@ type Extracted = {
 type DebugEntry = {
   id: string;
   ts: number;
-  source: "regex" | "ai" | "ai-error";
+  source: "interim" | "regex" | "ai" | "ai-error";
   transcript: string;
   raw: unknown;
   confidence: number;
@@ -191,7 +191,8 @@ function extractFromTranscript(full: string, prior: Extracted): Extracted {
 
   // Name: "my name is X", "I am X", "client name is X", Arabic "اسمي X"
   const name = firstCapturedPhrase(t, [
-    /\b(?:my name is|client name is|customer name is|this is|i'm|i am)\s+([a-z][a-z'\-]+(?:\s+[a-z][a-z'\-]+){0,3})(?=\s+(?:and|from|my|i work|working|phone|mobile|salary|income|need|want|looking|$)|[.,]|$)/i,
+    /\b(?:my name is|client name is|customer name is|this is)\s+([a-z][a-z'\-]+(?:\s+[a-z][a-z'\-]+){0,3})(?=\s+(?:and|from|my|i work|working|phone|mobile|salary|income|need|want|looking|$)|[.,]|$)/i,
+    /\b(?:i'm|i am)\s+(?!a\b|an\b|looking\b|calling\b|interested\b|working\b)([a-z][a-z'\-]+(?:\s+[a-z][a-z'\-]+){0,3})(?=\s+(?:and|from|my|phone|mobile|salary|income|need|want|$)|[.,]|$)/i,
     /(?:اسمي|انا|أنا)\s+([\u0600-\u06ff]{2,}(?:\s+[\u0600-\u06ff]{2,}){0,3})(?=\s+(?:و|من|رقمي|هاتفي|اعمل|أعمل|راتبي|$)|[،.]|$)/,
   ]);
   if (name && !prior.customer_name && !/^(a|an|looking|calling|interested|working)$/i.test(name)) out.customer_name = /[\u0600-\u06ff]/.test(name) ? name : titleCase(name);
@@ -220,22 +221,22 @@ function extractFromTranscript(full: string, prior: Extracted): Extracted {
 
   // Product keywords
   const productMap: [RegExp, Product][] = [
-    [/mortgage|rahn/i, "Mortgage"],
-    [/housing\s*loan|home\s*loan/i, "Housing Loan"],
-    [/auto|car\s*loan|vehicle/i, "Auto Loan"],
+    [/mortgage|rahn|رهن/i, "Mortgage"],
+    [/housing\s*loan|home\s*loan|سكن|منزل|بيت/i, "Housing Loan"],
+    [/auto|car\s*loan|vehicle|سيارة|مركبة/i, "Auto Loan"],
     [/buyout\s*(?:of\s*)?credit\s*card/i, "Buyout Credit Card"],
     [/buyout\s*(?:of\s*)?housing/i, "Buyout Housing Loan"],
     [/buyout|consolidat/i, "Buyout Personal Loan"],
-    [/credit\s*card|platinum|visa|mastercard/i, "Credit Card"],
+    [/credit\s*card|platinum|visa|mastercard|بطاقة/i, "Credit Card"],
     [/plcc/i, "PLCC"],
-    [/personal\s*loan|cash\s*loan/i, "Personal Loan"],
+    [/personal\s*loan|cash\s*loan|قرض\s*شخصي|تمويل\s*شخصي/i, "Personal Loan"],
   ];
   for (const [re, p] of productMap) {
     if (re.test(lower)) { out.product = p; break; }
   }
 
   // Company / employer — "I work at X", "work for X", "employed by X", "ministry of X"
-  const roleOfCompany = t.match(/(?:work(?:ing)?\s+as|position\s+is|job\s+is|i'?m\s+(?:a|an))\s+(?:a|an)?\s*([a-z][a-z\- ]{2,45}?)\s+(?:of|at|for|with)\s+([A-Za-z][\w&.\- ]{2,90}?)(?:\.|,| and | my | salary | income | need | want |$)/i);
+  const roleOfCompany = t.match(/(?:work(?:ing)?\s+as|position\s+is|job\s+(?:title\s+)?is|i'?m\s+(?:a|an)?|i\s+am\s+(?:a|an)?)\s*([a-z][a-z\- ]{2,45}?)\s+(?:of|at|for|with)\s+([A-Za-z][\w&.\- ]{2,90}?)(?:\.|,| and | my | salary | income | need | want |$)/i);
   const co =
     roleOfCompany ||
     t.match(/(?:i\s+work\s+(?:at|for|in)|i'?m\s+working\s+(?:at|for|in)|employed\s+(?:by|at)|company\s+is|employer\s+is|اعمل\s+(?:في|لدى)|أعمل\s+(?:في|لدى))\s+([A-Za-z\u0600-\u06ff][\w\u0600-\u06ff&.\- ]{2,90}?)(?:\.|,|،| and | as | for | with | my | salary | income | need | want |$)/i) ||
@@ -245,11 +246,11 @@ function extractFromTranscript(full: string, prior: Extracted): Extracted {
   else if (/self[-\s]?employed/i.test(t)) out.company_name = "Self-employed";
 
   // Job title — "I'm a teacher", "working as Secretary General", "I am a doctor/nurse/manager"
-  const job = roleOfCompany || t.match(/(?:i'?m\s+(?:a|an)|work(?:ing)?\s+as\s+(?:a|an)?|position\s+is|job\s+is)\s+([a-z][a-z\- ]{2,45}?)(?:\.|,| at | with | for | in | of |$)/i);
+  const job = roleOfCompany || t.match(/(?:i'?m\s+(?:a|an)|i\s+am\s+(?:a|an)|work(?:ing)?\s+as\s+(?:a|an)?|position\s+is|job\s+(?:title\s+)?is)\s+([a-z][a-z\- ]{2,45}?)(?:\.|,| at | with | for | in | of | and | my | salary | income |$)/i);
   if (job) out.job_title = titleCase(job[1]);
 
   // Work duration — "X years at", "for X years"
-  const dur = lower.match(/(\d+)\s*(?:years?|yrs?)/);
+  const dur = lower.match(/(\d+)\s*(?:years?|yrs?|سنة|سنوات|اشهر|شهور|months?)/);
   if (dur) {
     const n = Number(dur[1]);
     if (n < 1) out.work_duration = "Less than 3 months";
