@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/elip/UI";
 import {
@@ -9,10 +10,12 @@ import {
   WORK_DURATIONS,
   type Product,
 } from "@/lib/elip-data";
+import { extractLeadFromTranscript } from "@/lib/extract-lead.functions";
 
 export const Route = createFileRoute("/call-centre/assistant")({
   component: Assistant,
 });
+
 
 // ------------ Web Speech API typings (loose) ------------
 type SRConstructor = new () => SpeechRecognitionLike;
