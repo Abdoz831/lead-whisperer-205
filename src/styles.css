@@ -47,48 +47,54 @@
 }
 
 :root {
-  --radius: 0.5rem;
-  --background: oklch(0.985 0.003 90);
-  --foreground: oklch(0.18 0.01 260);
+  --radius: 0.375rem;
+  /* Bank al Etihad brand: orange primary, teal secondary, white surfaces */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.22 0.03 220);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.01 260);
+  --card-foreground: oklch(0.22 0.03 220);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.01 260);
-  --primary: oklch(0.27 0.08 265);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.96 0.005 260);
-  --secondary-foreground: oklch(0.2 0.02 260);
-  --muted: oklch(0.96 0.005 260);
-  --muted-foreground: oklch(0.45 0.015 260);
-  --accent: oklch(0.95 0.02 80);
-  --accent-foreground: oklch(0.27 0.08 265);
-  --destructive: oklch(0.55 0.22 27);
-  --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(0.9 0.005 260);
-  --input: oklch(0.9 0.005 260);
-  --ring: oklch(0.6 0.1 80);
+  --popover-foreground: oklch(0.22 0.03 220);
 
-  /* ELIP brand */
-  --navy: oklch(0.27 0.08 265);              /* #0f3460 */
-  --navy-foreground: oklch(0.99 0 0);
-  --gold: oklch(0.58 0.12 65);               /* #BA7517 */
-  --gold-light: oklch(0.72 0.16 70);         /* #EF9F27 */
-  --gold-foreground: oklch(0.99 0 0);
+  /* Primary = Etihad Orange #EE7623 */
+  --primary: oklch(0.68 0.18 47);
+  --primary-foreground: oklch(1 0 0);
+
+  /* Secondary = Etihad Teal #0E5C63 */
+  --secondary: oklch(0.45 0.06 200);
+  --secondary-foreground: oklch(1 0 0);
+
+  --muted: oklch(0.97 0.005 220);
+  --muted-foreground: oklch(0.45 0.02 220);
+  --accent: oklch(0.93 0.04 200);
+  --accent-foreground: oklch(0.30 0.06 200);
+  --destructive: oklch(0.58 0.22 27);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.9 0.01 220);
+  --input: oklch(0.9 0.01 220);
+  --ring: oklch(0.68 0.18 47);
+
+  /* ELIP brand — remapped to Etihad palette */
+  --navy: oklch(0.35 0.05 200);              /* deep teal #0E5C63 */
+  --navy-foreground: oklch(1 0 0);
+  --gold: oklch(0.68 0.18 47);               /* Etihad Orange */
+  --gold-light: oklch(0.76 0.16 55);         /* lighter orange */
+  --gold-foreground: oklch(1 0 0);
 
   --p1: oklch(0.58 0.22 27);                 /* red */
-  --p2: oklch(0.7 0.17 50);                  /* orange */
-  --p3: oklch(0.55 0.1 180);                 /* teal */
-  --p4: oklch(0.65 0.02 260);                /* grey */
+  --p2: oklch(0.68 0.18 47);                 /* etihad orange */
+  --p3: oklch(0.55 0.08 200);                /* teal */
+  --p4: oklch(0.65 0.02 220);                /* grey */
 
-  --success: oklch(0.6 0.16 145);
-  --warning: oklch(0.72 0.16 70);
-  --danger: oklch(0.55 0.22 27);
+  --success: oklch(0.6 0.14 165);
+  --warning: oklch(0.76 0.16 70);
+  --danger: oklch(0.58 0.22 27);
 
-  --cc-bg: oklch(0.96 0.03 240);
-  --cc-border: oklch(0.55 0.18 252);
+  --cc-bg: oklch(0.96 0.03 200);
+  --cc-border: oklch(0.45 0.08 200);
 
-  --sidebar: oklch(0.27 0.08 265);
-  --sidebar-foreground: oklch(0.95 0.01 260);
+  --sidebar: oklch(0.32 0.05 200);           /* dark teal sidebar */
+  --sidebar-foreground: oklch(0.98 0.005 200);
 }
 
 @layer base {
