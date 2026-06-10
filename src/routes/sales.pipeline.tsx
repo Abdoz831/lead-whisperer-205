@@ -267,3 +267,105 @@ function Modal({ children, title, onClose }: { children: React.ReactNode; title:
     </div>
   );
 }
+
+function EnrichmentPanel({ lead, onEnrich }: { lead: Lead; onEnrich?: () => void }) {
+  const e = lead.enrichment;
+  if (!e) {
+    return (
+      <div className="elip-card p-3 border-l-4 border-purple-500">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-[11px] font-bold text-navy">🔎 Social Intelligence & Sales Playbook</div>
+            <div className="text-[11px] text-muted-foreground mt-0.5">
+              {lead.enrichment_status === "loading"
+                ? "Searching public sources via Tavily and writing playbook…"
+                : lead.enrichment_error
+                  ? `Error: ${lead.enrichment_error}`
+                  : "No public-profile lookup yet. Run enrichment to search social media and generate a sales-guru pitch tailored to this client."}
+            </div>
+          </div>
+          {onEnrich && (
+            <button
+              onClick={onEnrich}
+              disabled={lead.enrichment_status === "loading"}
+              className="bg-purple-600 disabled:bg-zinc-400 text-white px-3 py-1.5 rounded text-[11px] font-semibold whitespace-nowrap"
+            >{lead.enrichment_status === "loading" ? "Searching…" : "🔎 Enrich now"}</button>
+          )}
+        </div>
+      </div>
+    );
+  }
+  const confColor =
+    e.confidence === "high" ? "bg-emerald-600" : e.confidence === "medium" ? "bg-amber-500" : "bg-zinc-500";
+  return (
+    <div className="elip-card p-4 border-l-4 border-purple-500 space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <div className="text-[11px] font-bold text-navy">🔎 Social Intelligence & Sales Playbook</div>
+          <span className={`text-[9px] font-bold text-white px-1.5 py-0.5 rounded ${confColor}`}>
+            {e.confidence.toUpperCase()} CONFIDENCE
+          </span>
+        </div>
+        {onEnrich && (
+          <button onClick={onEnrich} className="text-[10px] text-purple-700 underline">Refresh</button>
+        )}
+      </div>
+
+      <div>
+        <div className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold">Profile</div>
+        <div className="text-xs text-navy font-medium">{e.professional_profile}</div>
+        <div className="text-xs text-zinc-700 mt-1">{e.social_summary}</div>
+        {e.interests.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            {e.interests.map((i) => (
+              <span key={i} className="bg-purple-100 text-purple-900 text-[9px] px-1.5 py-0.5 rounded">{i}</span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div>
+        <div className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold">Sales-coach insight</div>
+        <div className="text-xs text-zinc-800 whitespace-pre-wrap">{e.insights}</div>
+      </div>
+
+      <div>
+        <div className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold">Recommended pitch</div>
+        <div className="text-xs text-zinc-800 italic bg-purple-50 p-2 rounded border border-purple-100">{e.recommended_pitch}</div>
+      </div>
+
+      <div>
+        <div className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold">Talking points</div>
+        <ul className="list-disc pl-5 text-xs text-zinc-800 space-y-0.5">
+          {e.talking_points.map((t, i) => <li key={i}>{t}</li>)}
+        </ul>
+      </div>
+
+      <div>
+        <div className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold">If they object…</div>
+        <div className="space-y-1.5">
+          {e.objection_handlers.map((o, i) => (
+            <div key={i} className="text-xs">
+              <div className="font-semibold text-red-700">“{o.objection}”</div>
+              <div className="text-zinc-800">→ {o.response}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {e.sources.length > 0 && (
+        <div>
+          <div className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold">Sources</div>
+          <ul className="text-[11px] space-y-0.5">
+            {e.sources.slice(0, 8).map((s) => (
+              <li key={s.url} className="truncate">
+                <a href={s.url} target="_blank" rel="noreferrer" className="text-blue-700 hover:underline">{s.title || s.url}</a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <div className="text-[9px] text-zinc-400">Fetched {new Date(e.fetched_at).toLocaleString()}</div>
+    </div>
+  );
+}
