@@ -20,8 +20,7 @@ import { Route as ManagementRecallRouteImport } from './routes/management.recall
 import { Route as ManagementReactivationRouteImport } from './routes/management.reactivation'
 import { Route as ManagementKpiRouteImport } from './routes/management.kpi'
 import { Route as ManagementChurnRouteImport } from './routes/management.churn'
-import { Route as CallCentreSubmissionsRouteImport } from './routes/call-centre.submissions'
-import { Route as CallCentreNewLeadRouteImport } from './routes/call-centre.new-lead'
+import { Route as CallCentreAssistantRouteImport } from './routes/call-centre.assistant'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -78,21 +77,15 @@ const ManagementChurnRoute = ManagementChurnRouteImport.update({
   path: '/management/churn',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CallCentreSubmissionsRoute = CallCentreSubmissionsRouteImport.update({
-  id: '/call-centre/submissions',
-  path: '/call-centre/submissions',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CallCentreNewLeadRoute = CallCentreNewLeadRouteImport.update({
-  id: '/call-centre/new-lead',
-  path: '/call-centre/new-lead',
+const CallCentreAssistantRoute = CallCentreAssistantRouteImport.update({
+  id: '/call-centre/assistant',
+  path: '/call-centre/assistant',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/call-centre/new-lead': typeof CallCentreNewLeadRoute
-  '/call-centre/submissions': typeof CallCentreSubmissionsRoute
+  '/call-centre/assistant': typeof CallCentreAssistantRoute
   '/management/churn': typeof ManagementChurnRoute
   '/management/kpi': typeof ManagementKpiRoute
   '/management/reactivation': typeof ManagementReactivationRoute
@@ -106,8 +99,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/call-centre/new-lead': typeof CallCentreNewLeadRoute
-  '/call-centre/submissions': typeof CallCentreSubmissionsRoute
+  '/call-centre/assistant': typeof CallCentreAssistantRoute
   '/management/churn': typeof ManagementChurnRoute
   '/management/kpi': typeof ManagementKpiRoute
   '/management/reactivation': typeof ManagementReactivationRoute
@@ -122,8 +114,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/call-centre/new-lead': typeof CallCentreNewLeadRoute
-  '/call-centre/submissions': typeof CallCentreSubmissionsRoute
+  '/call-centre/assistant': typeof CallCentreAssistantRoute
   '/management/churn': typeof ManagementChurnRoute
   '/management/kpi': typeof ManagementKpiRoute
   '/management/reactivation': typeof ManagementReactivationRoute
@@ -139,8 +130,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/call-centre/new-lead'
-    | '/call-centre/submissions'
+    | '/call-centre/assistant'
     | '/management/churn'
     | '/management/kpi'
     | '/management/reactivation'
@@ -154,8 +144,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/call-centre/new-lead'
-    | '/call-centre/submissions'
+    | '/call-centre/assistant'
     | '/management/churn'
     | '/management/kpi'
     | '/management/reactivation'
@@ -169,8 +158,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/call-centre/new-lead'
-    | '/call-centre/submissions'
+    | '/call-centre/assistant'
     | '/management/churn'
     | '/management/kpi'
     | '/management/reactivation'
@@ -185,8 +173,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  CallCentreNewLeadRoute: typeof CallCentreNewLeadRoute
-  CallCentreSubmissionsRoute: typeof CallCentreSubmissionsRoute
+  CallCentreAssistantRoute: typeof CallCentreAssistantRoute
   ManagementChurnRoute: typeof ManagementChurnRoute
   ManagementKpiRoute: typeof ManagementKpiRoute
   ManagementReactivationRoute: typeof ManagementReactivationRoute
@@ -278,18 +265,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManagementChurnRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/call-centre/submissions': {
-      id: '/call-centre/submissions'
-      path: '/call-centre/submissions'
-      fullPath: '/call-centre/submissions'
-      preLoaderRoute: typeof CallCentreSubmissionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/call-centre/new-lead': {
-      id: '/call-centre/new-lead'
-      path: '/call-centre/new-lead'
-      fullPath: '/call-centre/new-lead'
-      preLoaderRoute: typeof CallCentreNewLeadRouteImport
+    '/call-centre/assistant': {
+      id: '/call-centre/assistant'
+      path: '/call-centre/assistant'
+      fullPath: '/call-centre/assistant'
+      preLoaderRoute: typeof CallCentreAssistantRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -297,8 +277,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  CallCentreNewLeadRoute: CallCentreNewLeadRoute,
-  CallCentreSubmissionsRoute: CallCentreSubmissionsRoute,
+  CallCentreAssistantRoute: CallCentreAssistantRoute,
   ManagementChurnRoute: ManagementChurnRoute,
   ManagementKpiRoute: ManagementKpiRoute,
   ManagementReactivationRoute: ManagementReactivationRoute,
@@ -313,13 +292,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
