@@ -112,6 +112,22 @@ export interface Lead {
   last_update_hours: number;
   no_answer_attempts: number;
   next_call_window: string;
+  enrichment?: LeadEnrichment;
+  enrichment_status?: "idle" | "loading" | "error";
+  enrichment_error?: string;
+}
+
+export interface LeadEnrichment {
+  social_summary: string;
+  professional_profile: string;
+  interests: string[];
+  insights: string;
+  talking_points: string[];
+  objection_handlers: { objection: string; response: string }[];
+  recommended_pitch: string;
+  confidence: "high" | "medium" | "low";
+  sources: { title: string; url: string }[];
+  fetched_at: string;
 }
 
 export function calcBestTime(company: string): string {
