@@ -201,6 +201,23 @@ function Pipeline() {
                             >🔎 Enrich</button>
                           )}
                         </td>
+                        <td className="px-2 py-2 align-top max-w-[260px]">
+                          {l.enrichment_status === "loading" && !l.enrichment ? (
+                            <span className="text-[10px] text-muted-foreground italic">Writing playbook…</span>
+                          ) : l.enrichment ? (
+                            <button
+                              onClick={() => setExpanded(expanded === l.lead_id ? null : l.lead_id)}
+                              className="text-left"
+                              title={l.enrichment.insights}
+                            >
+                              <div className="text-[10px] font-semibold text-purple-800 mb-0.5">💡 Pitch</div>
+                              <div className="text-[10px] text-zinc-800 line-clamp-3 italic">"{l.enrichment.recommended_pitch}"</div>
+                              <div className="text-[9px] text-purple-700 underline mt-1">View full playbook ↓</div>
+                            </button>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground">—</span>
+                          )}
+                        </td>
                         <td className="px-2 py-2 font-mono text-[11px]">
                           {l.appian_ticket || (l.current_status === "Booked" ? (
                             <button onClick={() => submitAppian(l.lead_id)} className="bg-gold text-gold-foreground px-2 py-1 rounded text-[10px] font-semibold">Submit to Appian →</button>
