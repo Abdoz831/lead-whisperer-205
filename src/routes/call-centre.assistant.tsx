@@ -191,8 +191,8 @@ function extractFromTranscript(full: string, prior: Extracted): Extracted {
 
   // Name: "my name is X", "I am X", "client name is X", Arabic "اسمي X"
   const name = firstCapturedPhrase(t, [
-    /\b(?:my name is|client name is|customer name is|this is)\s+([a-z][a-z'\-]+(?:\s+[a-z][a-z'\-]+){0,3})(?=\s+(?:and|from|my|i work|working|phone|mobile|salary|income|need|want|looking|$)|[.,]|$)/i,
-    /\b(?:i'm|i am)\s+(?!a\b|an\b|looking\b|calling\b|interested\b|working\b)([a-z][a-z'\-]+(?:\s+[a-z][a-z'\-]+){0,3})(?=\s+(?:and|from|my|phone|mobile|salary|income|need|want|$)|[.,]|$)/i,
+    /\b(?:my name is|client name is|customer name is|this is)\s+([a-z][a-z'-]+(?:\s+[a-z][a-z'-]+){0,3})(?=\s+(?:and|from|my|i work|working|phone|mobile|salary|income|need|want|looking|$)|[.,]|$)/i,
+    /\b(?:i'm|i am)\s+(?!a\b|an\b|looking\b|calling\b|interested\b|working\b)([a-z][a-z'-]+(?:\s+[a-z][a-z'-]+){0,3})(?=\s+(?:and|from|my|phone|mobile|salary|income|need|want|$)|[.,]|$)/i,
     /(?:اسمي|انا|أنا)\s+([\u0600-\u06ff]{2,}(?:\s+[\u0600-\u06ff]{2,}){0,3})(?=\s+(?:و|من|رقمي|هاتفي|اعمل|أعمل|راتبي|$)|[،.]|$)/,
   ]);
   if (name && !prior.customer_name && !/^(a|an|looking|calling|interested|working)$/i.test(name)) out.customer_name = /[\u0600-\u06ff]/.test(name) ? name : titleCase(name);
@@ -245,7 +245,7 @@ function extractFromTranscript(full: string, prior: Extracted): Extracted {
   }
 
   // Company / employer — "I work at X", "work for X", "employed by X", "ministry of X"
-  const roleOfCompany = t.match(/(?:work(?:ing)?\s+as|position\s+is|job\s+(?:title\s+)?is|i'?m\s+(?:a|an)?|i\s+am\s+(?:a|an)?)\s*([a-z][a-z\- ]{2,45}?)\s+(?:of|at|for|with)\s+([A-Za-z][\w&.\- ]{2,90}?)(?:\.|,| and | my | salary | income | need | want |$)/i);
+  const roleOfCompany = t.match(/(?:work(?:ing)?\s+as|position\s+is|job\s+(?:title\s+)?is|i'?m\s+(?:a|an)?|i\s+am\s+(?:a|an)?)\s*([a-z][a-z -]{2,45}?)\s+(?:of|at|for|with)\s+([A-Za-z][\w&.- ]{2,90}?)(?:\.|,| and | my | salary | income | need | want |$)/i);
   const co =
     roleOfCompany ||
     t.match(/(?:i\s+work\s+(?:at|for|in)|i'?m\s+working\s+(?:at|for|in)|employed\s+(?:by|at)|company\s+is|employer\s+is|اعمل\s+(?:في|لدى)|أعمل\s+(?:في|لدى))\s+([A-Za-z\u0600-\u06ff][\w\u0600-\u06ff&.\- ]{2,90}?)(?:\.|,|،| and | as | for | with | my | salary | income | need | want |$)/i) ||
