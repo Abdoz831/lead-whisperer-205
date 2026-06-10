@@ -52,12 +52,16 @@ function Queue() {
 
   return (
     <>
-      <PageHeader title="Sales Pipeline — Leads Queue" subtitle="Your leads are pre-briefed. Read the call notes before every call." />
+      <PageHeader title="Sales Pipeline — Leads Queue" subtitle="AI ranks by company positioning, deal size, client score and best-time-to-call. P1 and P2 are auto-accepted into the Active Pipeline." />
       <div className="p-6">
+        <div className="mb-3 rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-900">
+          🤖 <strong>AI Auto-Accept:</strong> P1 + P2 leads are routed straight to Active Pipeline. P3 / P4 wait here for manual review.
+        </div>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-bold text-navy">Leads Queue</h2>
-          <span className="text-xs text-muted-foreground">{queue.length} warm leads from Contact Centre — click any row to read call notes first.</span>
+          <span className="text-xs text-muted-foreground">{queue.length} warm leads from Contact Centre — sorted by AI priority + best-time-to-call.</span>
         </div>
+
 
         <div className="elip-card overflow-hidden">
           <table className="w-full text-xs">
