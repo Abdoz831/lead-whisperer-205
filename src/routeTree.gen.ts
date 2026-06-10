@@ -10,33 +10,193 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SalesRecallRouteImport } from './routes/sales.recall'
+import { Route as SalesQueueRouteImport } from './routes/sales.queue'
+import { Route as SalesPipelineRouteImport } from './routes/sales.pipeline'
+import { Route as SalesLedgerRouteImport } from './routes/sales.ledger'
+import { Route as ManagementWorkloadRouteImport } from './routes/management.workload'
+import { Route as ManagementSalvageRouteImport } from './routes/management.salvage'
+import { Route as ManagementRecallRouteImport } from './routes/management.recall'
+import { Route as ManagementReactivationRouteImport } from './routes/management.reactivation'
+import { Route as ManagementKpiRouteImport } from './routes/management.kpi'
+import { Route as ManagementChurnRouteImport } from './routes/management.churn'
+import { Route as CallCentreSubmissionsRouteImport } from './routes/call-centre.submissions'
+import { Route as CallCentreNewLeadRouteImport } from './routes/call-centre.new-lead'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SalesRecallRoute = SalesRecallRouteImport.update({
+  id: '/sales/recall',
+  path: '/sales/recall',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SalesQueueRoute = SalesQueueRouteImport.update({
+  id: '/sales/queue',
+  path: '/sales/queue',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SalesPipelineRoute = SalesPipelineRouteImport.update({
+  id: '/sales/pipeline',
+  path: '/sales/pipeline',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SalesLedgerRoute = SalesLedgerRouteImport.update({
+  id: '/sales/ledger',
+  path: '/sales/ledger',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ManagementWorkloadRoute = ManagementWorkloadRouteImport.update({
+  id: '/management/workload',
+  path: '/management/workload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ManagementSalvageRoute = ManagementSalvageRouteImport.update({
+  id: '/management/salvage',
+  path: '/management/salvage',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ManagementRecallRoute = ManagementRecallRouteImport.update({
+  id: '/management/recall',
+  path: '/management/recall',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ManagementReactivationRoute = ManagementReactivationRouteImport.update({
+  id: '/management/reactivation',
+  path: '/management/reactivation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ManagementKpiRoute = ManagementKpiRouteImport.update({
+  id: '/management/kpi',
+  path: '/management/kpi',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ManagementChurnRoute = ManagementChurnRouteImport.update({
+  id: '/management/churn',
+  path: '/management/churn',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CallCentreSubmissionsRoute = CallCentreSubmissionsRouteImport.update({
+  id: '/call-centre/submissions',
+  path: '/call-centre/submissions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CallCentreNewLeadRoute = CallCentreNewLeadRouteImport.update({
+  id: '/call-centre/new-lead',
+  path: '/call-centre/new-lead',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/call-centre/new-lead': typeof CallCentreNewLeadRoute
+  '/call-centre/submissions': typeof CallCentreSubmissionsRoute
+  '/management/churn': typeof ManagementChurnRoute
+  '/management/kpi': typeof ManagementKpiRoute
+  '/management/reactivation': typeof ManagementReactivationRoute
+  '/management/recall': typeof ManagementRecallRoute
+  '/management/salvage': typeof ManagementSalvageRoute
+  '/management/workload': typeof ManagementWorkloadRoute
+  '/sales/ledger': typeof SalesLedgerRoute
+  '/sales/pipeline': typeof SalesPipelineRoute
+  '/sales/queue': typeof SalesQueueRoute
+  '/sales/recall': typeof SalesRecallRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/call-centre/new-lead': typeof CallCentreNewLeadRoute
+  '/call-centre/submissions': typeof CallCentreSubmissionsRoute
+  '/management/churn': typeof ManagementChurnRoute
+  '/management/kpi': typeof ManagementKpiRoute
+  '/management/reactivation': typeof ManagementReactivationRoute
+  '/management/recall': typeof ManagementRecallRoute
+  '/management/salvage': typeof ManagementSalvageRoute
+  '/management/workload': typeof ManagementWorkloadRoute
+  '/sales/ledger': typeof SalesLedgerRoute
+  '/sales/pipeline': typeof SalesPipelineRoute
+  '/sales/queue': typeof SalesQueueRoute
+  '/sales/recall': typeof SalesRecallRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/call-centre/new-lead': typeof CallCentreNewLeadRoute
+  '/call-centre/submissions': typeof CallCentreSubmissionsRoute
+  '/management/churn': typeof ManagementChurnRoute
+  '/management/kpi': typeof ManagementKpiRoute
+  '/management/reactivation': typeof ManagementReactivationRoute
+  '/management/recall': typeof ManagementRecallRoute
+  '/management/salvage': typeof ManagementSalvageRoute
+  '/management/workload': typeof ManagementWorkloadRoute
+  '/sales/ledger': typeof SalesLedgerRoute
+  '/sales/pipeline': typeof SalesPipelineRoute
+  '/sales/queue': typeof SalesQueueRoute
+  '/sales/recall': typeof SalesRecallRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/call-centre/new-lead'
+    | '/call-centre/submissions'
+    | '/management/churn'
+    | '/management/kpi'
+    | '/management/reactivation'
+    | '/management/recall'
+    | '/management/salvage'
+    | '/management/workload'
+    | '/sales/ledger'
+    | '/sales/pipeline'
+    | '/sales/queue'
+    | '/sales/recall'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/call-centre/new-lead'
+    | '/call-centre/submissions'
+    | '/management/churn'
+    | '/management/kpi'
+    | '/management/reactivation'
+    | '/management/recall'
+    | '/management/salvage'
+    | '/management/workload'
+    | '/sales/ledger'
+    | '/sales/pipeline'
+    | '/sales/queue'
+    | '/sales/recall'
+  id:
+    | '__root__'
+    | '/'
+    | '/call-centre/new-lead'
+    | '/call-centre/submissions'
+    | '/management/churn'
+    | '/management/kpi'
+    | '/management/reactivation'
+    | '/management/recall'
+    | '/management/salvage'
+    | '/management/workload'
+    | '/sales/ledger'
+    | '/sales/pipeline'
+    | '/sales/queue'
+    | '/sales/recall'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CallCentreNewLeadRoute: typeof CallCentreNewLeadRoute
+  CallCentreSubmissionsRoute: typeof CallCentreSubmissionsRoute
+  ManagementChurnRoute: typeof ManagementChurnRoute
+  ManagementKpiRoute: typeof ManagementKpiRoute
+  ManagementReactivationRoute: typeof ManagementReactivationRoute
+  ManagementRecallRoute: typeof ManagementRecallRoute
+  ManagementSalvageRoute: typeof ManagementSalvageRoute
+  ManagementWorkloadRoute: typeof ManagementWorkloadRoute
+  SalesLedgerRoute: typeof SalesLedgerRoute
+  SalesPipelineRoute: typeof SalesPipelineRoute
+  SalesQueueRoute: typeof SalesQueueRoute
+  SalesRecallRoute: typeof SalesRecallRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +208,107 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sales/recall': {
+      id: '/sales/recall'
+      path: '/sales/recall'
+      fullPath: '/sales/recall'
+      preLoaderRoute: typeof SalesRecallRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sales/queue': {
+      id: '/sales/queue'
+      path: '/sales/queue'
+      fullPath: '/sales/queue'
+      preLoaderRoute: typeof SalesQueueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sales/pipeline': {
+      id: '/sales/pipeline'
+      path: '/sales/pipeline'
+      fullPath: '/sales/pipeline'
+      preLoaderRoute: typeof SalesPipelineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sales/ledger': {
+      id: '/sales/ledger'
+      path: '/sales/ledger'
+      fullPath: '/sales/ledger'
+      preLoaderRoute: typeof SalesLedgerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/management/workload': {
+      id: '/management/workload'
+      path: '/management/workload'
+      fullPath: '/management/workload'
+      preLoaderRoute: typeof ManagementWorkloadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/management/salvage': {
+      id: '/management/salvage'
+      path: '/management/salvage'
+      fullPath: '/management/salvage'
+      preLoaderRoute: typeof ManagementSalvageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/management/recall': {
+      id: '/management/recall'
+      path: '/management/recall'
+      fullPath: '/management/recall'
+      preLoaderRoute: typeof ManagementRecallRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/management/reactivation': {
+      id: '/management/reactivation'
+      path: '/management/reactivation'
+      fullPath: '/management/reactivation'
+      preLoaderRoute: typeof ManagementReactivationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/management/kpi': {
+      id: '/management/kpi'
+      path: '/management/kpi'
+      fullPath: '/management/kpi'
+      preLoaderRoute: typeof ManagementKpiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/management/churn': {
+      id: '/management/churn'
+      path: '/management/churn'
+      fullPath: '/management/churn'
+      preLoaderRoute: typeof ManagementChurnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/call-centre/submissions': {
+      id: '/call-centre/submissions'
+      path: '/call-centre/submissions'
+      fullPath: '/call-centre/submissions'
+      preLoaderRoute: typeof CallCentreSubmissionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/call-centre/new-lead': {
+      id: '/call-centre/new-lead'
+      path: '/call-centre/new-lead'
+      fullPath: '/call-centre/new-lead'
+      preLoaderRoute: typeof CallCentreNewLeadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CallCentreNewLeadRoute: CallCentreNewLeadRoute,
+  CallCentreSubmissionsRoute: CallCentreSubmissionsRoute,
+  ManagementChurnRoute: ManagementChurnRoute,
+  ManagementKpiRoute: ManagementKpiRoute,
+  ManagementReactivationRoute: ManagementReactivationRoute,
+  ManagementRecallRoute: ManagementRecallRoute,
+  ManagementSalvageRoute: ManagementSalvageRoute,
+  ManagementWorkloadRoute: ManagementWorkloadRoute,
+  SalesLedgerRoute: SalesLedgerRoute,
+  SalesPipelineRoute: SalesPipelineRoute,
+  SalesQueueRoute: SalesQueueRoute,
+  SalesRecallRoute: SalesRecallRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
