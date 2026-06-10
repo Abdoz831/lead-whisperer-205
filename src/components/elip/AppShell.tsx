@@ -1,20 +1,34 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { ElipProvider, useElip, type Role } from "@/lib/elip-data";
 import { Toaster } from "@/components/ui/sonner";
+import {
+  Headphones,
+  Briefcase,
+  BarChart3,
+  Sparkles,
+  type LucideIcon,
+} from "lucide-react";
 
-const sections = [
+type Section = {
+  label: string;
+  Icon: LucideIcon;
+  roles: Role[];
+  links: { to: string; label: string }[];
+};
+
+const sections: Section[] = [
   {
     label: "CALL CENTRE",
-    icon: "📞",
-    roles: ["cc"] as Role[],
+    Icon: Headphones,
+    roles: ["cc"],
     links: [
       { to: "/call-centre/assistant", label: "AI Call Assistant" },
     ],
   },
   {
     label: "SALES PIPELINE",
-    icon: "💼",
-    roles: ["rlm"] as Role[],
+    Icon: Briefcase,
+    roles: ["rlm"],
     links: [
       { to: "/sales/queue", label: "Leads Queue" },
       { to: "/sales/pipeline", label: "Active Pipeline" },
@@ -24,8 +38,8 @@ const sections = [
   },
   {
     label: "MANAGEMENT",
-    icon: "📊",
-    roles: ["tl"] as Role[],
+    Icon: BarChart3,
+    roles: ["tl"],
     links: [
       { to: "/management/kpi", label: "KPI Dashboard" },
       { to: "/management/workload", label: "Workload Monitor" },
@@ -36,6 +50,7 @@ const sections = [
     ],
   },
 ];
+
 
 function Sidebar() {
   const { role, setRole, currentUser } = useElip();
