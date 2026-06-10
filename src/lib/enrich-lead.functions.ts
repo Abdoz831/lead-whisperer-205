@@ -19,13 +19,13 @@ const Input = z.object({
 const OutSchema = z.object({
   social_summary: z.string().describe("2-4 sentence summary of the person's public/social-media footprint (LinkedIn role, company, public posts, news mentions, professional background). If nothing credible was found, say so honestly."),
   professional_profile: z.string().describe("One-line professional positioning, e.g. 'Senior IT manager at Orange Telecom, 8+ years, active on LinkedIn about fintech'."),
-  interests: z.array(z.string().max(60)).max(6).describe("Public interests, causes, hobbies hinted in their footprint"),
+  interests: z.array(z.string()).describe("Public interests, causes, hobbies hinted in their footprint (0-6 items)"),
   insights: z.string().describe("Sales-coach analysis: who this person is, financial sophistication, decision style, risk profile, what likely matters most to them, what objections to expect"),
-  talking_points: z.array(z.string().max(180)).min(3).max(6).describe("Specific opening lines and conversational hooks tailored to this client — reference their company, role, life stage, and the product"),
+  talking_points: z.array(z.string()).describe("3-6 specific opening lines and conversational hooks tailored to this client — reference their company, role, life stage, and the product"),
   objection_handlers: z.array(z.object({
-    objection: z.string().max(120),
-    response: z.string().max(280),
-  })).min(2).max(4).describe("Likely objections from this profile and how to handle them"),
+    objection: z.string(),
+    response: z.string(),
+  })).describe("2-4 likely objections from this profile and how to handle them"),
   recommended_pitch: z.string().describe("A 3-5 sentence recommended pitch a sales guru would open with on the call"),
   confidence: z.enum(["high", "medium", "low"]).describe("Confidence the public info actually matches this person"),
 });
