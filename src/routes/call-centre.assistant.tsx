@@ -248,6 +248,20 @@ function firstCapturedPhrase(text: string, patterns: RegExp[]) {
   return "";
 }
 
+function parseDob(raw: string): string {
+  const months: Record<string, number> = { jan: 1, january: 1, feb: 2, february: 2, mar: 3, march: 3, apr: 4, april: 4, may: 5, jun: 6, june: 6, jul: 7, july: 7, aug: 8, august: 8, sep: 9, sept: 9, september: 9, oct: 10, october: 10, nov: 11, november: 11, dec: 12, december: 12 };
+  const s = raw.trim().toLowerCase();
+  let y = 0, m = 0, d = 0;
+  let mt = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+  if (mt) { y = +mt[1]; m = +mt[2]; d = +mt[3]; }
+  if (!y) { mt = s.match(/^(\d{1,2})[\/\-\. ](\d{1,2})[\/\-\. ](\d{2,4})$/); if (mt) { d = +mt[1]; m = +mt[2]; y = +mt[3]; } }
+  if (!y) { mt = s.match(/^(\d{1,2})\s+([a-z]+)\.?\s+(\d{2,4})$/); if (mt) { d = +mt[1]; m = months[mt[2]] ?? 0; y = +mt[3]; } }
+  if (!y || !m || !d) return "";
+  if (y < 100) y += y < 30 ? 2000 : 1900;
+  if (m < 1 || m > 12 || d < 1 || d > 31 || y < 1900 || y > new Date().getFullYear()) return "";
+  return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
 function extractFromTranscript(full: string, prior: Extracted): Extracted {
   const t = normalizeDigits(full).replace(/\s+/g, " ").trim();
   const lower = t.toLowerCase();
