@@ -19,13 +19,13 @@ const Input = z.object({
 const OutSchema = z.object({
   social_summary: z.string().describe("2-4 sentence summary of the person's public/social-media footprint (LinkedIn role, company, public posts, news mentions, professional background). If nothing credible was found, say so honestly."),
   professional_profile: z.string().describe("One-line professional positioning, e.g. 'Senior IT manager at Orange Telecom, 8+ years, active on LinkedIn about fintech'."),
-  interests: z.array(z.string().max(60)).max(6).describe("Public interests, causes, hobbies hinted in their footprint"),
+  interests: z.array(z.string()).describe("Public interests, causes, hobbies hinted in their footprint (0-6 items)"),
   insights: z.string().describe("Sales-coach analysis: who this person is, financial sophistication, decision style, risk profile, what likely matters most to them, what objections to expect"),
-  talking_points: z.array(z.string().max(180)).min(3).max(6).describe("Specific opening lines and conversational hooks tailored to this client — reference their company, role, life stage, and the product"),
+  talking_points: z.array(z.string()).describe("3-6 specific opening lines and conversational hooks tailored to this client — reference their company, role, life stage, and the product"),
   objection_handlers: z.array(z.object({
-    objection: z.string().max(120),
-    response: z.string().max(280),
-  })).min(2).max(4).describe("Likely objections from this profile and how to handle them"),
+    objection: z.string(),
+    response: z.string(),
+  })).describe("2-4 likely objections from this profile and how to handle them"),
   recommended_pitch: z.string().describe("A 3-5 sentence recommended pitch a sales guru would open with on the call"),
   confidence: z.enum(["high", "medium", "low"]).describe("Confidence the public info actually matches this person"),
 });
@@ -87,17 +87,19 @@ export const enrichLead = createServerFn({ method: "POST" })
       .join("\n\n");
 
     const gateway = createLovableAiGatewayProvider(lovableKey);
-    const { object } = await generateObject({
+
+    const callArgs = {
       model: gateway("google/gemini-3-flash-preview"),
       schema: OutSchema,
-      maxOutputTokens: 2048,
+      maxOutputTokens: 4096,
       system:
         "You are a world-class retail-banking sales coach for Bank al Etihad in Jordan. " +
         "You receive (a) basic CRM facts about a prospect and (b) raw public/social-media search snippets about them. " +
         "Your job: build a sharp profile and a sales playbook the RLM can use on the very next call. " +
         "MATCHING RULES — be strict: a snippet only matches the CRM person if name + (company OR job title OR location 'Jordan' OR birth year) line up. " +
         "If matches are weak or ambiguous (common name, different country, different employer, age mismatch), set confidence='low' and explicitly say the public footprint is unclear; do NOT fabricate biography. " +
-        "Tailor talking points to the client's company, seniority, life stage (age from DOB) and the specific product/amount. Use a respectful Jordanian business tone. Keep everything actionable, concrete, no fluff.",
+        "Tailor talking points to the client's company, seniority, life stage (age from DOB) and the specific product/amount. Use a respectful Jordanian business tone. Keep everything actionable, concrete, no fluff. " +
+        "ALWAYS return valid JSON matching the schema exactly — include every field, keep arrays short (3-4 items) so the response is not truncated.",
       prompt:
         `CRM FACTS (use ALL of these to match the right person):\n` +
         `- Name: ${data.customer_name}\n` +
@@ -112,7 +114,24 @@ export const enrichLead = createServerFn({ method: "POST" })
         `- Monthly income: JOD ${data.net_income_jod || 0}\n` +
         `- Contact-centre notes: ${data.cc_notes || "(none)"}\n\n` +
         `PUBLIC/SOCIAL SEARCH RESULTS (Jordan-targeted, Tavily over LinkedIn/Twitter/news):\n${evidence || "(no results returned by web search)"}\n`,
-    });
+    } as const;
+
+    let object: z.infer<typeof OutSchema>;
+    try {
+      const r = await generateObject(callArgs);
+      object = r.object;
+    } catch {
+      // Retry once with a tighter token budget hint and simpler instruction
+      const r = await generateObject({
+        ...callArgs,
+        maxOutputTokens: 3072,
+        prompt:
+          callArgs.prompt +
+          `\n\nReturn ONLY the JSON object. Keep talking_points to exactly 3 items and objection_handlers to exactly 2 items.`,
+      });
+      object = r.object;
+    }
+
 
     return {
       ...object,
