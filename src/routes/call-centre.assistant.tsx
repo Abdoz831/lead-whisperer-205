@@ -565,6 +565,95 @@ function Assistant() {
           </div>
         </div>
       </div>
+
+      {/* Live Debug Panel */}
+      <div className="px-6 pb-6">
+        <div className="elip-card overflow-hidden">
+          <button
+            onClick={() => setShowDebug((s) => !s)}
+            className="w-full px-4 py-2 border-b bg-zinc-900 text-zinc-100 flex items-center justify-between text-xs font-mono"
+          >
+            <span>
+              🐞 LIVE DEBUG · {debugLog.length} event{debugLog.length === 1 ? "" : "s"} ·
+              latest source:{" "}
+              <strong className="text-gold">
+                {debugLog[0]?.source ?? "—"}
+              </strong>
+              {debugLog[0] && (
+                <>
+                  {" · conf "}
+                  <strong className="text-gold">
+                    {(debugLog[0].confidence * 100).toFixed(0)}%
+                  </strong>
+                  {" ("}
+                  {debugLog[0].filled}/{debugLog[0].total}
+                  {" fields)"}
+                </>
+              )}
+            </span>
+            <span>{showDebug ? "▾ hide" : "▸ show"}</span>
+          </button>
+          {showDebug && (
+            <div className="max-h-[420px] overflow-y-auto divide-y divide-zinc-800 bg-zinc-950 text-zinc-100 font-mono text-[11px]">
+              {debugLog.length === 0 && (
+                <div className="p-4 text-zinc-500 italic">
+                  No extraction events yet. Start listening and speak — every regex and AI pass will appear here.
+                </div>
+              )}
+              {debugLog.map((d) => {
+                const pct = Math.round(d.confidence * 100);
+                const tone =
+                  d.source === "ai-error"
+                    ? "bg-red-600 text-white"
+                    : d.source === "ai"
+                    ? "bg-emerald-600 text-white"
+                    : "bg-sky-600 text-white";
+                return (
+                  <div key={d.id} className="p-3 grid grid-cols-12 gap-3">
+                    <div className="col-span-2 space-y-1">
+                      <div className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${tone}`}>
+                        {d.source}
+                      </div>
+                      <div className="text-zinc-400 text-[10px]">
+                        {new Date(d.ts).toLocaleTimeString("en-GB", { hour12: false })}
+                      </div>
+                      {d.latencyMs !== undefined && (
+                        <div className="text-zinc-400 text-[10px]">{d.latencyMs} ms</div>
+                      )}
+                      <div className="text-[10px]">
+                        <span className="text-zinc-400">conf </span>
+                        <span className={pct >= 70 ? "text-emerald-400" : pct >= 40 ? "text-amber-300" : "text-red-400"}>
+                          {pct}%
+                        </span>
+                        <span className="text-zinc-500"> ({d.filled}/{d.total})</span>
+                      </div>
+                      {d.changed.length > 0 && (
+                        <div className="text-[10px] text-gold">Δ {d.changed.join(", ")}</div>
+                      )}
+                    </div>
+                    <div className="col-span-5">
+                      <div className="text-[10px] uppercase text-zinc-500 mb-1">Transcript sent</div>
+                      <pre className="whitespace-pre-wrap break-words text-zinc-200 max-h-40 overflow-y-auto">
+                        {d.transcript || "(empty)"}
+                      </pre>
+                    </div>
+                    <div className="col-span-5">
+                      <div className="text-[10px] uppercase text-zinc-500 mb-1">
+                        {d.error ? "Error" : "Raw extracted JSON"}
+                      </div>
+                      <pre className="whitespace-pre-wrap break-words text-emerald-300 max-h-40 overflow-y-auto">
+                        {d.error
+                          ? d.error
+                          : JSON.stringify(d.raw, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
     </>
   );
 }
