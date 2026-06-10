@@ -884,6 +884,7 @@ function Assistant() {
       customer_name: extracted.customer_name.trim(),
       customer_cif: "NA",
       phone_number: extracted.phone_number.trim(),
+      date_of_birth: extracted.date_of_birth.trim(),
       net_income_jod: Number(extracted.net_income_jod),
       company_name: extracted.company_name.trim(),
       product: extracted.product,
