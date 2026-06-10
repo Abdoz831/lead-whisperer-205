@@ -16,6 +16,7 @@ import { Route as SalesPipelineRouteImport } from './routes/sales.pipeline'
 import { Route as SalesLedgerRouteImport } from './routes/sales.ledger'
 import { Route as ManagementWorkloadRouteImport } from './routes/management.workload'
 import { Route as ManagementKpiRouteImport } from './routes/management.kpi'
+import { Route as ManagementChurnRouteImport } from './routes/management.churn'
 import { Route as CallCentreSubmissionsRouteImport } from './routes/call-centre.submissions'
 import { Route as CallCentreNewLeadRouteImport } from './routes/call-centre.new-lead'
 
@@ -54,6 +55,11 @@ const ManagementKpiRoute = ManagementKpiRouteImport.update({
   path: '/management/kpi',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ManagementChurnRoute = ManagementChurnRouteImport.update({
+  id: '/management/churn',
+  path: '/management/churn',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CallCentreSubmissionsRoute = CallCentreSubmissionsRouteImport.update({
   id: '/call-centre/submissions',
   path: '/call-centre/submissions',
@@ -69,6 +75,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/call-centre/new-lead': typeof CallCentreNewLeadRoute
   '/call-centre/submissions': typeof CallCentreSubmissionsRoute
+  '/management/churn': typeof ManagementChurnRoute
   '/management/kpi': typeof ManagementKpiRoute
   '/management/workload': typeof ManagementWorkloadRoute
   '/sales/ledger': typeof SalesLedgerRoute
@@ -80,6 +87,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/call-centre/new-lead': typeof CallCentreNewLeadRoute
   '/call-centre/submissions': typeof CallCentreSubmissionsRoute
+  '/management/churn': typeof ManagementChurnRoute
   '/management/kpi': typeof ManagementKpiRoute
   '/management/workload': typeof ManagementWorkloadRoute
   '/sales/ledger': typeof SalesLedgerRoute
@@ -92,6 +100,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/call-centre/new-lead': typeof CallCentreNewLeadRoute
   '/call-centre/submissions': typeof CallCentreSubmissionsRoute
+  '/management/churn': typeof ManagementChurnRoute
   '/management/kpi': typeof ManagementKpiRoute
   '/management/workload': typeof ManagementWorkloadRoute
   '/sales/ledger': typeof SalesLedgerRoute
@@ -105,6 +114,7 @@ export interface FileRouteTypes {
     | '/'
     | '/call-centre/new-lead'
     | '/call-centre/submissions'
+    | '/management/churn'
     | '/management/kpi'
     | '/management/workload'
     | '/sales/ledger'
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/'
     | '/call-centre/new-lead'
     | '/call-centre/submissions'
+    | '/management/churn'
     | '/management/kpi'
     | '/management/workload'
     | '/sales/ledger'
@@ -127,6 +138,7 @@ export interface FileRouteTypes {
     | '/'
     | '/call-centre/new-lead'
     | '/call-centre/submissions'
+    | '/management/churn'
     | '/management/kpi'
     | '/management/workload'
     | '/sales/ledger'
@@ -139,6 +151,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CallCentreNewLeadRoute: typeof CallCentreNewLeadRoute
   CallCentreSubmissionsRoute: typeof CallCentreSubmissionsRoute
+  ManagementChurnRoute: typeof ManagementChurnRoute
   ManagementKpiRoute: typeof ManagementKpiRoute
   ManagementWorkloadRoute: typeof ManagementWorkloadRoute
   SalesLedgerRoute: typeof SalesLedgerRoute
@@ -198,6 +211,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManagementKpiRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/management/churn': {
+      id: '/management/churn'
+      path: '/management/churn'
+      fullPath: '/management/churn'
+      preLoaderRoute: typeof ManagementChurnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/call-centre/submissions': {
       id: '/call-centre/submissions'
       path: '/call-centre/submissions'
@@ -219,6 +239,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CallCentreNewLeadRoute: CallCentreNewLeadRoute,
   CallCentreSubmissionsRoute: CallCentreSubmissionsRoute,
+  ManagementChurnRoute: ManagementChurnRoute,
   ManagementKpiRoute: ManagementKpiRoute,
   ManagementWorkloadRoute: ManagementWorkloadRoute,
   SalesLedgerRoute: SalesLedgerRoute,
