@@ -51,6 +51,14 @@ const sections: Section[] = [
       { to: "/management/audit", label: "Explainable AI & Audit Log" },
     ],
   },
+  {
+    label: "AGENT FABRIC",
+    Icon: Bot,
+    roles: ["tl"],
+    links: [
+      { to: "/management/hermes", label: "Hermes Agent Hub" },
+    ],
+  },
 ];
 
 
