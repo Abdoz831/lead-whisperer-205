@@ -14,15 +14,15 @@ import {
 type Section = {
   label: string;
   Icon: LucideIcon;
-  roles: Role[];
   links: { to: string; label: string }[];
+  defaultOpen?: boolean;
 };
 
 const sections: Section[] = [
   {
     label: "CALL CENTRE",
     Icon: Headphones,
-    roles: ["cc"],
+    defaultOpen: true,
     links: [
       { to: "/call-centre/assistant", label: "AI Call Assistant" },
     ],
@@ -30,16 +30,16 @@ const sections: Section[] = [
   {
     label: "SALES PIPELINE",
     Icon: Briefcase,
-    roles: ["rlm"],
+    defaultOpen: true,
     links: [
       { to: "/sales/dashboard", label: "Pipeline Dashboard" },
       { to: "/sales/pipeline", label: "Active Pipeline" },
     ],
   },
   {
-    label: "MANAGEMENT",
-    Icon: BarChart3,
-    roles: ["tl"],
+    label: "SETTINGS & OBSERVATIONS",
+    Icon: Settings2,
+    defaultOpen: false,
     links: [
       { to: "/management/kpi", label: "KPI Dashboard" },
       { to: "/management/workload", label: "Workload Monitor" },
@@ -50,13 +50,6 @@ const sections: Section[] = [
       { to: "/sales/queue", label: "Leads Queue" },
       { to: "/sales/ledger", label: "Processed Ledger" },
       { to: "/management/audit", label: "Explainable AI & Audit Log" },
-    ],
-  },
-  {
-    label: "AGENT FABRIC",
-    Icon: Bot,
-    roles: ["tl"],
-    links: [
       { to: "/management/hermes", label: "Hermes Agent Hub" },
     ],
   },
