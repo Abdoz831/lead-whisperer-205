@@ -169,7 +169,7 @@ function AuditPageInner() {
                   )}
                   {auditable.map((l, idx) => {
                     const baselWarn = (l.ai_score ?? 0) < 55 && l.current_status === "Approved";
-                    const pdplWarn = !l.consent_marketing && l.outcome !== "closed_won";
+                    const pdplWarn = (l.ai_score ?? 0) < 40 && l.outcome !== "closed_won";
                     const xaiOk = (l.ai_score ?? 0) > 0;
                     const hash = `0x${(l.lead_id + l.current_status).split("").reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0).toString(16).padStart(8, "0").slice(-8)}`;
                     return (
