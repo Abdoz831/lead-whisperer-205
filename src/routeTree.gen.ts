@@ -22,6 +22,7 @@ import { Route as ManagementKpiRouteImport } from './routes/management.kpi'
 import { Route as ManagementChurnRouteImport } from './routes/management.churn'
 import { Route as ManagementAuditRouteImport } from './routes/management.audit'
 import { Route as CallCentreAssistantRouteImport } from './routes/call-centre.assistant'
+import { Route as ApiPublicSlackEventsRouteImport } from './routes/api/public/slack.events'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -88,6 +89,11 @@ const CallCentreAssistantRoute = CallCentreAssistantRouteImport.update({
   path: '/call-centre/assistant',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicSlackEventsRoute = ApiPublicSlackEventsRouteImport.update({
+  id: '/api/public/slack/events',
+  path: '/api/public/slack/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -103,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/sales/ledger': typeof SalesLedgerRoute
   '/sales/pipeline': typeof SalesPipelineRoute
   '/sales/queue': typeof SalesQueueRoute
+  '/api/public/slack/events': typeof ApiPublicSlackEventsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -118,6 +125,7 @@ export interface FileRoutesByTo {
   '/sales/ledger': typeof SalesLedgerRoute
   '/sales/pipeline': typeof SalesPipelineRoute
   '/sales/queue': typeof SalesQueueRoute
+  '/api/public/slack/events': typeof ApiPublicSlackEventsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -134,6 +142,7 @@ export interface FileRoutesById {
   '/sales/ledger': typeof SalesLedgerRoute
   '/sales/pipeline': typeof SalesPipelineRoute
   '/sales/queue': typeof SalesQueueRoute
+  '/api/public/slack/events': typeof ApiPublicSlackEventsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -151,6 +160,7 @@ export interface FileRouteTypes {
     | '/sales/ledger'
     | '/sales/pipeline'
     | '/sales/queue'
+    | '/api/public/slack/events'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -166,6 +176,7 @@ export interface FileRouteTypes {
     | '/sales/ledger'
     | '/sales/pipeline'
     | '/sales/queue'
+    | '/api/public/slack/events'
   id:
     | '__root__'
     | '/'
@@ -181,6 +192,7 @@ export interface FileRouteTypes {
     | '/sales/ledger'
     | '/sales/pipeline'
     | '/sales/queue'
+    | '/api/public/slack/events'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -197,6 +209,7 @@ export interface RootRouteChildren {
   SalesLedgerRoute: typeof SalesLedgerRoute
   SalesPipelineRoute: typeof SalesPipelineRoute
   SalesQueueRoute: typeof SalesQueueRoute
+  ApiPublicSlackEventsRoute: typeof ApiPublicSlackEventsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -292,6 +305,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CallCentreAssistantRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/slack/events': {
+      id: '/api/public/slack/events'
+      path: '/api/public/slack/events'
+      fullPath: '/api/public/slack/events'
+      preLoaderRoute: typeof ApiPublicSlackEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -309,7 +329,18 @@ const rootRouteChildren: RootRouteChildren = {
   SalesLedgerRoute: SalesLedgerRoute,
   SalesPipelineRoute: SalesPipelineRoute,
   SalesQueueRoute: SalesQueueRoute,
+  ApiPublicSlackEventsRoute: ApiPublicSlackEventsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
