@@ -7,6 +7,7 @@ import { CCNotesPanel } from "@/components/elip/CCNotesPanel";
 import { useElip, rlmName, stageClass, type Stage, type Lead } from "@/lib/elip-data";
 import { enrichLead } from "@/lib/enrich-lead.functions";
 import { GrowthOutboundPanel } from "@/components/elip/GrowthOutboundPanel";
+import { FollowUpsPanel } from "@/components/elip/FollowUpsPanel";
 
 export const Route = createFileRoute("/sales/pipeline")({
   component: Pipeline,
@@ -20,7 +21,7 @@ function Pipeline() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [showBriefing, setShowBriefing] = useState<Lead | null>(null);
   const [rejectLead, setRejectLead] = useState<Lead | null>(null);
-  const [tab, setTab] = useState<"active" | "outbound">("active");
+  const [tab, setTab] = useState<"active" | "outbound" | "followups">("active");
 
   const enrichingRef = useRef<Set<string>>(new Set());
 
@@ -125,6 +126,7 @@ function Pipeline() {
         <div className="flex gap-1 border-b border-zinc-200 mb-5">
           {([
             { id: "active", label: "Active Pipeline" },
+            { id: "followups", label: "🔔 Follow-ups" },
             { id: "outbound", label: "🚀 Growth Outbound" },
           ] as const).map((t) => (
             <button
@@ -141,6 +143,8 @@ function Pipeline() {
 
         {tab === "outbound" ? (
           <GrowthOutboundPanel />
+        ) : tab === "followups" ? (
+          <FollowUpsPanel />
         ) : (
         <>
         <div className="grid grid-cols-4 gap-4 mb-6">
