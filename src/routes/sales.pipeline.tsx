@@ -280,6 +280,8 @@ function Pipeline() {
             </table>
           </div>
         </div>
+        </>
+        )}
       </div>
 
       {showBriefing && (
