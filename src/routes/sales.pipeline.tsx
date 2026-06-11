@@ -6,6 +6,7 @@ import { PageHeader, KPICard, ScoreCircle } from "@/components/elip/UI";
 import { CCNotesPanel } from "@/components/elip/CCNotesPanel";
 import { useElip, rlmName, stageClass, type Stage, type Lead } from "@/lib/elip-data";
 import { enrichLead } from "@/lib/enrich-lead.functions";
+import { GrowthOutboundPanel } from "@/components/elip/GrowthOutboundPanel";
 
 export const Route = createFileRoute("/sales/pipeline")({
   component: Pipeline,
@@ -19,6 +20,7 @@ function Pipeline() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [showBriefing, setShowBriefing] = useState<Lead | null>(null);
   const [rejectLead, setRejectLead] = useState<Lead | null>(null);
+  const [tab, setTab] = useState<"active" | "outbound">("active");
 
   const enrichingRef = useRef<Set<string>>(new Set());
 
@@ -120,6 +122,27 @@ function Pipeline() {
     <>
       <PageHeader title="Sales Pipeline — Active Pipeline" subtitle="Deals in flight. Update stages, log RLM notes, push to close." />
       <div className="p-6">
+        <div className="flex gap-1 border-b border-zinc-200 mb-5">
+          {([
+            { id: "active", label: "Active Pipeline" },
+            { id: "outbound", label: "🚀 Growth Outbound" },
+          ] as const).map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`px-4 py-2 text-xs font-semibold rounded-t-md border-b-2 -mb-px transition ${
+                tab === t.id
+                  ? "border-navy text-navy bg-card"
+                  : "border-transparent text-muted-foreground hover:text-navy"
+              }`}
+            >{t.label}</button>
+          ))}
+        </div>
+
+        {tab === "outbound" ? (
+          <GrowthOutboundPanel />
+        ) : (
+        <>
         <div className="grid grid-cols-4 gap-4 mb-6">
           <KPICard label="Total Active Pipeline" value={`JOD ${totalActive.toLocaleString()}`} sub={`${active.length} active units`} accent="navy" />
           <KPICard label="Total Closed / Approved" value={`JOD ${totalClosed.toLocaleString()}`} sub={`${closed.length} units closed`} accent="green" />
@@ -257,6 +280,8 @@ function Pipeline() {
             </table>
           </div>
         </div>
+        </>
+        )}
       </div>
 
       {showBriefing && (
