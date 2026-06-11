@@ -47,6 +47,7 @@ const sections: Section[] = [
       { to: "/management/reactivation", label: "Re-Activation Queue" },
       { to: "/sales/queue", label: "Leads Queue" },
       { to: "/sales/ledger", label: "Processed Ledger" },
+      { to: "/management/audit", label: "Explainable AI & Audit Log" },
     ],
   },
 ];
