@@ -5,6 +5,7 @@ import {
   Headphones,
   Briefcase,
   BarChart3,
+  Bot,
   type LucideIcon,
 } from "lucide-react";
 
