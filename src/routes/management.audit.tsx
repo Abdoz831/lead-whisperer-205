@@ -284,7 +284,7 @@ function ExplainPanel({ lead }: { lead: ReturnType<typeof useElip>["leads"][numb
           <Meta k="AI Score" v={(lead.ai_score ?? 0).toString()} />
           <Meta k="Status" v={lead.current_status} />
           <Meta k="RLM" v={rlmName(lead.assigned_rlm)} />
-          <Meta k="Consent" v={lead.consent_marketing ? "Granted" : "Withheld"} />
+          <Meta k="Channel" v={lead.channel ?? "—"} />
         </div>
         <div className="mt-4 px-3 py-2 rounded bg-navy text-navy-foreground text-center">
           <div className="text-[10px] uppercase tracking-wider opacity-70">AI Recommendation</div>
