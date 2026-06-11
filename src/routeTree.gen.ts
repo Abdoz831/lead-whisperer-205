@@ -19,6 +19,7 @@ import { Route as ManagementSalvageRouteImport } from './routes/management.salva
 import { Route as ManagementRecallRouteImport } from './routes/management.recall'
 import { Route as ManagementReactivationRouteImport } from './routes/management.reactivation'
 import { Route as ManagementKpiRouteImport } from './routes/management.kpi'
+import { Route as ManagementHermesRouteImport } from './routes/management.hermes'
 import { Route as ManagementChurnRouteImport } from './routes/management.churn'
 import { Route as ManagementAuditRouteImport } from './routes/management.audit'
 import { Route as CallCentreAssistantRouteImport } from './routes/call-centre.assistant'
@@ -74,6 +75,11 @@ const ManagementKpiRoute = ManagementKpiRouteImport.update({
   path: '/management/kpi',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ManagementHermesRoute = ManagementHermesRouteImport.update({
+  id: '/management/hermes',
+  path: '/management/hermes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ManagementChurnRoute = ManagementChurnRouteImport.update({
   id: '/management/churn',
   path: '/management/churn',
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/call-centre/assistant': typeof CallCentreAssistantRoute
   '/management/audit': typeof ManagementAuditRoute
   '/management/churn': typeof ManagementChurnRoute
+  '/management/hermes': typeof ManagementHermesRoute
   '/management/kpi': typeof ManagementKpiRoute
   '/management/reactivation': typeof ManagementReactivationRoute
   '/management/recall': typeof ManagementRecallRoute
@@ -116,6 +123,7 @@ export interface FileRoutesByTo {
   '/call-centre/assistant': typeof CallCentreAssistantRoute
   '/management/audit': typeof ManagementAuditRoute
   '/management/churn': typeof ManagementChurnRoute
+  '/management/hermes': typeof ManagementHermesRoute
   '/management/kpi': typeof ManagementKpiRoute
   '/management/reactivation': typeof ManagementReactivationRoute
   '/management/recall': typeof ManagementRecallRoute
@@ -133,6 +141,7 @@ export interface FileRoutesById {
   '/call-centre/assistant': typeof CallCentreAssistantRoute
   '/management/audit': typeof ManagementAuditRoute
   '/management/churn': typeof ManagementChurnRoute
+  '/management/hermes': typeof ManagementHermesRoute
   '/management/kpi': typeof ManagementKpiRoute
   '/management/reactivation': typeof ManagementReactivationRoute
   '/management/recall': typeof ManagementRecallRoute
@@ -151,6 +160,7 @@ export interface FileRouteTypes {
     | '/call-centre/assistant'
     | '/management/audit'
     | '/management/churn'
+    | '/management/hermes'
     | '/management/kpi'
     | '/management/reactivation'
     | '/management/recall'
@@ -167,6 +177,7 @@ export interface FileRouteTypes {
     | '/call-centre/assistant'
     | '/management/audit'
     | '/management/churn'
+    | '/management/hermes'
     | '/management/kpi'
     | '/management/reactivation'
     | '/management/recall'
@@ -183,6 +194,7 @@ export interface FileRouteTypes {
     | '/call-centre/assistant'
     | '/management/audit'
     | '/management/churn'
+    | '/management/hermes'
     | '/management/kpi'
     | '/management/reactivation'
     | '/management/recall'
@@ -200,6 +212,7 @@ export interface RootRouteChildren {
   CallCentreAssistantRoute: typeof CallCentreAssistantRoute
   ManagementAuditRoute: typeof ManagementAuditRoute
   ManagementChurnRoute: typeof ManagementChurnRoute
+  ManagementHermesRoute: typeof ManagementHermesRoute
   ManagementKpiRoute: typeof ManagementKpiRoute
   ManagementReactivationRoute: typeof ManagementReactivationRoute
   ManagementRecallRoute: typeof ManagementRecallRoute
@@ -284,6 +297,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManagementKpiRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/management/hermes': {
+      id: '/management/hermes'
+      path: '/management/hermes'
+      fullPath: '/management/hermes'
+      preLoaderRoute: typeof ManagementHermesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/management/churn': {
       id: '/management/churn'
       path: '/management/churn'
@@ -320,6 +340,7 @@ const rootRouteChildren: RootRouteChildren = {
   CallCentreAssistantRoute: CallCentreAssistantRoute,
   ManagementAuditRoute: ManagementAuditRoute,
   ManagementChurnRoute: ManagementChurnRoute,
+  ManagementHermesRoute: ManagementHermesRoute,
   ManagementKpiRoute: ManagementKpiRoute,
   ManagementReactivationRoute: ManagementReactivationRoute,
   ManagementRecallRoute: ManagementRecallRoute,
@@ -334,3 +355,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
