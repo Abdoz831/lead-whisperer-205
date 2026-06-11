@@ -20,6 +20,7 @@ import { Route as ManagementRecallRouteImport } from './routes/management.recall
 import { Route as ManagementReactivationRouteImport } from './routes/management.reactivation'
 import { Route as ManagementKpiRouteImport } from './routes/management.kpi'
 import { Route as ManagementChurnRouteImport } from './routes/management.churn'
+import { Route as ManagementAuditRouteImport } from './routes/management.audit'
 import { Route as CallCentreAssistantRouteImport } from './routes/call-centre.assistant'
 
 const IndexRoute = IndexRouteImport.update({
@@ -77,6 +78,11 @@ const ManagementChurnRoute = ManagementChurnRouteImport.update({
   path: '/management/churn',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ManagementAuditRoute = ManagementAuditRouteImport.update({
+  id: '/management/audit',
+  path: '/management/audit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CallCentreAssistantRoute = CallCentreAssistantRouteImport.update({
   id: '/call-centre/assistant',
   path: '/call-centre/assistant',
@@ -86,6 +92,7 @@ const CallCentreAssistantRoute = CallCentreAssistantRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/call-centre/assistant': typeof CallCentreAssistantRoute
+  '/management/audit': typeof ManagementAuditRoute
   '/management/churn': typeof ManagementChurnRoute
   '/management/kpi': typeof ManagementKpiRoute
   '/management/reactivation': typeof ManagementReactivationRoute
@@ -100,6 +107,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/call-centre/assistant': typeof CallCentreAssistantRoute
+  '/management/audit': typeof ManagementAuditRoute
   '/management/churn': typeof ManagementChurnRoute
   '/management/kpi': typeof ManagementKpiRoute
   '/management/reactivation': typeof ManagementReactivationRoute
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/call-centre/assistant': typeof CallCentreAssistantRoute
+  '/management/audit': typeof ManagementAuditRoute
   '/management/churn': typeof ManagementChurnRoute
   '/management/kpi': typeof ManagementKpiRoute
   '/management/reactivation': typeof ManagementReactivationRoute
@@ -131,6 +140,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/call-centre/assistant'
+    | '/management/audit'
     | '/management/churn'
     | '/management/kpi'
     | '/management/reactivation'
@@ -145,6 +155,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/call-centre/assistant'
+    | '/management/audit'
     | '/management/churn'
     | '/management/kpi'
     | '/management/reactivation'
@@ -159,6 +170,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/call-centre/assistant'
+    | '/management/audit'
     | '/management/churn'
     | '/management/kpi'
     | '/management/reactivation'
@@ -174,6 +186,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CallCentreAssistantRoute: typeof CallCentreAssistantRoute
+  ManagementAuditRoute: typeof ManagementAuditRoute
   ManagementChurnRoute: typeof ManagementChurnRoute
   ManagementKpiRoute: typeof ManagementKpiRoute
   ManagementReactivationRoute: typeof ManagementReactivationRoute
@@ -265,6 +278,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManagementChurnRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/management/audit': {
+      id: '/management/audit'
+      path: '/management/audit'
+      fullPath: '/management/audit'
+      preLoaderRoute: typeof ManagementAuditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/call-centre/assistant': {
       id: '/call-centre/assistant'
       path: '/call-centre/assistant'
@@ -278,6 +298,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CallCentreAssistantRoute: CallCentreAssistantRoute,
+  ManagementAuditRoute: ManagementAuditRoute,
   ManagementChurnRoute: ManagementChurnRoute,
   ManagementKpiRoute: ManagementKpiRoute,
   ManagementReactivationRoute: ManagementReactivationRoute,
