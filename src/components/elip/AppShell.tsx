@@ -57,8 +57,13 @@ const sections: Section[] = [
 
 
 function Sidebar() {
-  const { role, setRole, currentUser } = useElip();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(sections.map((s) => [s.label, s.defaultOpen ?? false])),
+  );
+  const toggle = (label: string) =>
+    setOpenSections((p) => ({ ...p, [label]: !p[label] }));
+
 
   return (
       <aside className="w-64 shrink-0 bg-navy text-navy-foreground flex flex-col">
