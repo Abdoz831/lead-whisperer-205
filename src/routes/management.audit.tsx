@@ -265,8 +265,8 @@ function ExplainPanel({ lead }: { lead: ReturnType<typeof useElip>["leads"][numb
     f.push({ name: "Debt-to-Income Ratio", impact: Math.min(28, Math.max(8, 35 - score / 4)), direction: score < 60 ? "−" : "+", note: `Estimated DTI band for ${lead.product}` });
     f.push({ name: "Employment Tenure", impact: 18, direction: "+", note: lead.work_duration ?? "—" });
     f.push({ name: "Product Risk Weight", impact: 14, direction: "−", note: lead.product });
-    f.push({ name: "Channel Quality", impact: 9, direction: "+", note: lead.source_channel });
-    f.push({ name: "Prior Relationship", impact: 7, direction: lead.is_existing_customer ? "+" : "−", note: lead.is_existing_customer ? "Existing customer" : "New-to-bank" });
+    f.push({ name: "Channel Quality", impact: 9, direction: "+", note: lead.channel ?? "—" });
+    f.push({ name: "Prior Relationship", impact: 7, direction: "+", note: lead.company_name ?? "—" });
     return f.sort((a, b) => b.impact - a.impact);
   }, [lead]);
 
