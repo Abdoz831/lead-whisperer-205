@@ -1,11 +1,12 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { ElipProvider, useElip, type Role } from "@/lib/elip-data";
+import { useState } from "react";
+import { ElipProvider } from "@/lib/elip-data";
 import { Toaster } from "@/components/ui/sonner";
 import {
   Headphones,
   Briefcase,
-  BarChart3,
-  Bot,
+  Settings2,
+  ChevronDown,
   type LucideIcon,
 } from "lucide-react";
 
@@ -13,15 +14,15 @@ import {
 type Section = {
   label: string;
   Icon: LucideIcon;
-  roles: Role[];
   links: { to: string; label: string }[];
+  defaultOpen?: boolean;
 };
 
 const sections: Section[] = [
   {
     label: "CALL CENTRE",
     Icon: Headphones,
-    roles: ["cc"],
+    defaultOpen: true,
     links: [
       { to: "/call-centre/assistant", label: "AI Call Assistant" },
     ],
@@ -29,16 +30,16 @@ const sections: Section[] = [
   {
     label: "SALES PIPELINE",
     Icon: Briefcase,
-    roles: ["rlm"],
+    defaultOpen: true,
     links: [
       { to: "/sales/dashboard", label: "Pipeline Dashboard" },
       { to: "/sales/pipeline", label: "Active Pipeline" },
     ],
   },
   {
-    label: "MANAGEMENT",
-    Icon: BarChart3,
-    roles: ["tl"],
+    label: "SETTINGS & OBSERVATIONS",
+    Icon: Settings2,
+    defaultOpen: false,
     links: [
       { to: "/management/kpi", label: "KPI Dashboard" },
       { to: "/management/workload", label: "Workload Monitor" },
@@ -49,13 +50,6 @@ const sections: Section[] = [
       { to: "/sales/queue", label: "Leads Queue" },
       { to: "/sales/ledger", label: "Processed Ledger" },
       { to: "/management/audit", label: "Explainable AI & Audit Log" },
-    ],
-  },
-  {
-    label: "AGENT FABRIC",
-    Icon: Bot,
-    roles: ["tl"],
-    links: [
       { to: "/management/hermes", label: "Hermes Agent Hub" },
     ],
   },
@@ -63,8 +57,13 @@ const sections: Section[] = [
 
 
 function Sidebar() {
-  const { role, setRole, currentUser } = useElip();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(sections.map((s) => [s.label, s.defaultOpen ?? false])),
+  );
+  const toggle = (label: string) =>
+    setOpenSections((p) => ({ ...p, [label]: !p[label] }));
+
 
   return (
       <aside className="w-64 shrink-0 bg-navy text-navy-foreground flex flex-col">
@@ -113,56 +112,43 @@ function Sidebar() {
 
       <nav className="flex-1 overflow-y-auto py-3 text-sm">
         {sections.map((s) => (
-          <div key={s.label} className="mb-4">
-            <div className="px-5 py-1 text-[11px] font-semibold tracking-wider text-white/50 flex items-center gap-2">
-              <s.Icon className="w-3.5 h-3.5" strokeWidth={2.25} /> {s.label}
-            </div>
+          <div key={s.label} className="mb-2">
+            <button
+              type="button"
+              onClick={() => toggle(s.label)}
+              className="w-full px-5 py-1.5 text-[11px] font-semibold tracking-wider text-white/60 hover:text-white flex items-center gap-2 transition-colors"
+              aria-expanded={!!openSections[s.label]}
+            >
+              <s.Icon className="w-3.5 h-3.5" strokeWidth={2.25} />
+              <span className="flex-1 text-left">{s.label}</span>
+              <ChevronDown
+                className={`w-3.5 h-3.5 transition-transform ${
+                  openSections[s.label] ? "rotate-0" : "-rotate-90"
+                }`}
+                strokeWidth={2.5}
+              />
+            </button>
 
-            {s.links.map((l) => {
-              const active = pathname === l.to;
-              return (
-                <Link
-                  key={l.to}
-                  to={l.to}
-                  className={`block pl-9 pr-4 py-1.5 border-l-2 transition-colors ${
-                    active
-                      ? "border-gold text-white bg-white/5 font-semibold"
-                      : "border-transparent text-white/70 hover:text-white hover:bg-white/5"
-                  }`}
-                >
-                  {l.label}
-                </Link>
-              );
-            })}
+            {openSections[s.label] &&
+              s.links.map((l) => {
+                const active = pathname === l.to;
+                return (
+                  <Link
+                    key={l.to}
+                    to={l.to}
+                    className={`block pl-9 pr-4 py-1.5 border-l-2 transition-colors ${
+                      active
+                        ? "border-gold text-white bg-white/5 font-semibold"
+                        : "border-transparent text-white/70 hover:text-white hover:bg-white/5"
+                    }`}
+                  >
+                    {l.label}
+                  </Link>
+                );
+              })}
           </div>
         ))}
       </nav>
-
-      <div className="border-t border-white/10 p-4 text-xs">
-        <div className="mb-2 text-white/60">Viewing as</div>
-        <div className="grid grid-cols-3 gap-1 mb-3">
-          {(["cc", "rlm", "tl"] as Role[]).map((r) => (
-            <button
-              key={r}
-              onClick={() => setRole(r)}
-              className={`py-1.5 rounded text-[11px] font-semibold transition-colors ${
-                role === r ? "bg-gold text-gold-foreground" : "bg-white/5 text-white/70 hover:bg-white/10"
-              }`}
-            >
-              {r === "cc" ? "CC Agent" : r === "rlm" ? "Sales RLM" : "TL / Mgmt"}
-            </button>
-          ))}
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-gold text-gold-foreground flex items-center justify-center font-bold text-xs">
-            {currentUser.name.split(" ").map((n) => n[0]).join("")}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="truncate font-medium">{currentUser.name}</div>
-            <div className="text-white/50 text-[10px]">{role === "cc" ? "Contact Centre" : role === "rlm" ? "Retail Loan Manager" : "Team Leader"}</div>
-          </div>
-        </div>
-      </div>
     </aside>
   );
 }
