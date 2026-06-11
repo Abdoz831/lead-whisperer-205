@@ -1,11 +1,12 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { ElipProvider, useElip, type Role } from "@/lib/elip-data";
+import { useState } from "react";
+import { ElipProvider } from "@/lib/elip-data";
 import { Toaster } from "@/components/ui/sonner";
 import {
   Headphones,
   Briefcase,
-  BarChart3,
-  Bot,
+  Settings2,
+  ChevronDown,
   type LucideIcon,
 } from "lucide-react";
 
