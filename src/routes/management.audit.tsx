@@ -54,7 +54,7 @@ const CHECKS: { framework: Framework; control: string; requirement: string }[] =
   { framework: "JOR-DPA", control: "Art. 17 Automated Decisions", requirement: "Right to human review honoured; explanation provided on request within 30 days." },
   { framework: "JOR-DPA", control: "Art. 21 Retention", requirement: "Rejected leads purged after 24 months; closed won retained per CBJ AML rules." },
   { framework: "XAI", control: "X-1 Reason Codes", requirement: "Top 3 contributing features per decision surfaced to RLM and customer file." },
-  { framework: "X-1 ", control: "X-2 Counterfactuals", requirement: "Minimum actionable change (e.g. DTI < 40%) shown for rejected applicants." } as { framework: Framework; control: string; requirement: string },
+  { framework: "XAI", control: "X-2 Counterfactuals", requirement: "Minimum actionable change (e.g. DTI < 40%) shown for rejected applicants." },
   { framework: "XAI", control: "X-3 Model Card", requirement: "Public model card published: scope, training data window, known limitations." },
 ];
 
