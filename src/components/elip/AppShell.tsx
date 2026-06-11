@@ -5,6 +5,7 @@ import {
   Headphones,
   Briefcase,
   BarChart3,
+  Bot,
   type LucideIcon,
 } from "lucide-react";
 
@@ -48,6 +49,14 @@ const sections: Section[] = [
       { to: "/sales/queue", label: "Leads Queue" },
       { to: "/sales/ledger", label: "Processed Ledger" },
       { to: "/management/audit", label: "Explainable AI & Audit Log" },
+    ],
+  },
+  {
+    label: "AGENT FABRIC",
+    Icon: Bot,
+    roles: ["tl"],
+    links: [
+      { to: "/management/hermes", label: "Hermes Agent Hub" },
     ],
   },
 ];

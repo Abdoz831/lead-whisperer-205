@@ -19,9 +19,11 @@ import { Route as ManagementSalvageRouteImport } from './routes/management.salva
 import { Route as ManagementRecallRouteImport } from './routes/management.recall'
 import { Route as ManagementReactivationRouteImport } from './routes/management.reactivation'
 import { Route as ManagementKpiRouteImport } from './routes/management.kpi'
+import { Route as ManagementHermesRouteImport } from './routes/management.hermes'
 import { Route as ManagementChurnRouteImport } from './routes/management.churn'
 import { Route as ManagementAuditRouteImport } from './routes/management.audit'
 import { Route as CallCentreAssistantRouteImport } from './routes/call-centre.assistant'
+import { Route as ApiPublicSlackEventsRouteImport } from './routes/api/public/slack.events'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -73,6 +75,11 @@ const ManagementKpiRoute = ManagementKpiRouteImport.update({
   path: '/management/kpi',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ManagementHermesRoute = ManagementHermesRouteImport.update({
+  id: '/management/hermes',
+  path: '/management/hermes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ManagementChurnRoute = ManagementChurnRouteImport.update({
   id: '/management/churn',
   path: '/management/churn',
@@ -88,12 +95,18 @@ const CallCentreAssistantRoute = CallCentreAssistantRouteImport.update({
   path: '/call-centre/assistant',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicSlackEventsRoute = ApiPublicSlackEventsRouteImport.update({
+  id: '/api/public/slack/events',
+  path: '/api/public/slack/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/call-centre/assistant': typeof CallCentreAssistantRoute
   '/management/audit': typeof ManagementAuditRoute
   '/management/churn': typeof ManagementChurnRoute
+  '/management/hermes': typeof ManagementHermesRoute
   '/management/kpi': typeof ManagementKpiRoute
   '/management/reactivation': typeof ManagementReactivationRoute
   '/management/recall': typeof ManagementRecallRoute
@@ -103,12 +116,14 @@ export interface FileRoutesByFullPath {
   '/sales/ledger': typeof SalesLedgerRoute
   '/sales/pipeline': typeof SalesPipelineRoute
   '/sales/queue': typeof SalesQueueRoute
+  '/api/public/slack/events': typeof ApiPublicSlackEventsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/call-centre/assistant': typeof CallCentreAssistantRoute
   '/management/audit': typeof ManagementAuditRoute
   '/management/churn': typeof ManagementChurnRoute
+  '/management/hermes': typeof ManagementHermesRoute
   '/management/kpi': typeof ManagementKpiRoute
   '/management/reactivation': typeof ManagementReactivationRoute
   '/management/recall': typeof ManagementRecallRoute
@@ -118,6 +133,7 @@ export interface FileRoutesByTo {
   '/sales/ledger': typeof SalesLedgerRoute
   '/sales/pipeline': typeof SalesPipelineRoute
   '/sales/queue': typeof SalesQueueRoute
+  '/api/public/slack/events': typeof ApiPublicSlackEventsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -125,6 +141,7 @@ export interface FileRoutesById {
   '/call-centre/assistant': typeof CallCentreAssistantRoute
   '/management/audit': typeof ManagementAuditRoute
   '/management/churn': typeof ManagementChurnRoute
+  '/management/hermes': typeof ManagementHermesRoute
   '/management/kpi': typeof ManagementKpiRoute
   '/management/reactivation': typeof ManagementReactivationRoute
   '/management/recall': typeof ManagementRecallRoute
@@ -134,6 +151,7 @@ export interface FileRoutesById {
   '/sales/ledger': typeof SalesLedgerRoute
   '/sales/pipeline': typeof SalesPipelineRoute
   '/sales/queue': typeof SalesQueueRoute
+  '/api/public/slack/events': typeof ApiPublicSlackEventsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -142,6 +160,7 @@ export interface FileRouteTypes {
     | '/call-centre/assistant'
     | '/management/audit'
     | '/management/churn'
+    | '/management/hermes'
     | '/management/kpi'
     | '/management/reactivation'
     | '/management/recall'
@@ -151,12 +170,14 @@ export interface FileRouteTypes {
     | '/sales/ledger'
     | '/sales/pipeline'
     | '/sales/queue'
+    | '/api/public/slack/events'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/call-centre/assistant'
     | '/management/audit'
     | '/management/churn'
+    | '/management/hermes'
     | '/management/kpi'
     | '/management/reactivation'
     | '/management/recall'
@@ -166,12 +187,14 @@ export interface FileRouteTypes {
     | '/sales/ledger'
     | '/sales/pipeline'
     | '/sales/queue'
+    | '/api/public/slack/events'
   id:
     | '__root__'
     | '/'
     | '/call-centre/assistant'
     | '/management/audit'
     | '/management/churn'
+    | '/management/hermes'
     | '/management/kpi'
     | '/management/reactivation'
     | '/management/recall'
@@ -181,6 +204,7 @@ export interface FileRouteTypes {
     | '/sales/ledger'
     | '/sales/pipeline'
     | '/sales/queue'
+    | '/api/public/slack/events'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -188,6 +212,7 @@ export interface RootRouteChildren {
   CallCentreAssistantRoute: typeof CallCentreAssistantRoute
   ManagementAuditRoute: typeof ManagementAuditRoute
   ManagementChurnRoute: typeof ManagementChurnRoute
+  ManagementHermesRoute: typeof ManagementHermesRoute
   ManagementKpiRoute: typeof ManagementKpiRoute
   ManagementReactivationRoute: typeof ManagementReactivationRoute
   ManagementRecallRoute: typeof ManagementRecallRoute
@@ -197,6 +222,7 @@ export interface RootRouteChildren {
   SalesLedgerRoute: typeof SalesLedgerRoute
   SalesPipelineRoute: typeof SalesPipelineRoute
   SalesQueueRoute: typeof SalesQueueRoute
+  ApiPublicSlackEventsRoute: typeof ApiPublicSlackEventsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -271,6 +297,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManagementKpiRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/management/hermes': {
+      id: '/management/hermes'
+      path: '/management/hermes'
+      fullPath: '/management/hermes'
+      preLoaderRoute: typeof ManagementHermesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/management/churn': {
       id: '/management/churn'
       path: '/management/churn'
@@ -292,6 +325,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CallCentreAssistantRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/slack/events': {
+      id: '/api/public/slack/events'
+      path: '/api/public/slack/events'
+      fullPath: '/api/public/slack/events'
+      preLoaderRoute: typeof ApiPublicSlackEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -300,6 +340,7 @@ const rootRouteChildren: RootRouteChildren = {
   CallCentreAssistantRoute: CallCentreAssistantRoute,
   ManagementAuditRoute: ManagementAuditRoute,
   ManagementChurnRoute: ManagementChurnRoute,
+  ManagementHermesRoute: ManagementHermesRoute,
   ManagementKpiRoute: ManagementKpiRoute,
   ManagementReactivationRoute: ManagementReactivationRoute,
   ManagementRecallRoute: ManagementRecallRoute,
@@ -309,6 +350,7 @@ const rootRouteChildren: RootRouteChildren = {
   SalesLedgerRoute: SalesLedgerRoute,
   SalesPipelineRoute: SalesPipelineRoute,
   SalesQueueRoute: SalesQueueRoute,
+  ApiPublicSlackEventsRoute: ApiPublicSlackEventsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
