@@ -49,14 +49,25 @@ export const Route = createFileRoute("/api/tts")({
         };
 
 
-        const res = await fetch(
-          `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`,
-          {
+        const ttsUrl = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`;
+        const callTts = (p: unknown) =>
+          fetch(ttsUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          },
-        );
+            body: JSON.stringify(p),
+          });
+
+        let res = await callTts(payload);
+
+        // If Chirp3-HD isn't enabled on this key, fall back to Wavenet automatically.
+        if (!res.ok && isArabic && isChirp) {
+          const fallbackPayload = {
+            input: { text },
+            voice: { languageCode: "ar-XA", name: "ar-XA-Wavenet-B" },
+            audioConfig: { audioEncoding: "MP3", speakingRate: 0.95, pitch: 0 },
+          };
+          res = await callTts(fallbackPayload);
+        }
 
         if (!res.ok) {
           const errText = await res.text();
@@ -70,6 +81,7 @@ export const Route = createFileRoute("/api/tts")({
         if (!data.audioContent) {
           return new Response(JSON.stringify({ error: "No audio returned" }), { status: 502 });
         }
+
 
         return new Response(JSON.stringify({ audio: data.audioContent, mime: "audio/mpeg" }), {
           status: 200,
