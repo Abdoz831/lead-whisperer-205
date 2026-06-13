@@ -343,8 +343,10 @@ export function ElipProvider({ children }: { children: ReactNode }) {
         best_time_to_call: calcBestTime(input.company_name),
         assigned_rlm: rlmId,
         submitted_at: new Date().toISOString(),
-        current_status: "Queued",
-        status_history: [],
+        current_status: "Docs Pending",
+        status_history: [
+          { ts: new Date().toISOString(), by: input.submitted_by_agent, from: "Queued", to: "Docs Pending" },
+        ],
         outcome: "",
         affiliate_redirect: false,
         group_salvage_status: "",
