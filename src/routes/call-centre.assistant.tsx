@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/elip/UI";
 import { useElip, PRODUCTS, CHANNELS, WORK_DURATIONS, type Product } from "@/lib/elip-data";
 import { extractLeadFromTranscript } from "@/lib/extract-lead.functions";
+import { detectLangFromText } from "@/lib/detect-lang.functions";
+
 import { areAgentsKilled, useAgentsKilled } from "@/lib/agents-kill-switch";
 
 export const Route = createFileRoute("/call-centre/assistant")({
