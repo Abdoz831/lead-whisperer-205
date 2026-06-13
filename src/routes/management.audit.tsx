@@ -67,14 +67,12 @@ function AuditPageInner() {
   const [framework, setFramework] = useState<Framework | "ALL">("ALL");
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
 
+  // Show every lead that has been scored by the AI — approvals, reviews AND declines.
+  // Reason codes apply to all AI-assisted decisions, not just rejections.
   const auditable = useMemo(
     () =>
       leads
-        .filter((l) =>
-          ["Closed Won", "Approved", "Rejected", "RLM-Reject", "Underwriting", "Booked"].includes(
-            l.current_status,
-          ),
-        )
+        .filter((l) => (l.ai_score ?? 0) > 0)
         .sort((a, b) => (b.submitted_at || "").localeCompare(a.submitted_at || "")),
     [leads],
   );
@@ -258,19 +256,76 @@ function Badge({ ok }: { ok: boolean }) {
 }
 
 function ExplainPanel({ lead }: { lead: ReturnType<typeof useElip>["leads"][number] }) {
-  // Synthetic SHAP-style contributions derived from lead attributes
-  const features = useMemo(() => {
-    const f: { name: string; impact: number; direction: "+" | "−"; note: string }[] = [];
-    const score = lead.ai_score ?? 50;
-    f.push({ name: "Debt-to-Income Ratio", impact: Math.min(28, Math.max(8, 35 - score / 4)), direction: score < 60 ? "−" : "+", note: `Estimated DTI band for ${lead.product}` });
-    f.push({ name: "Employment Tenure", impact: 18, direction: "+", note: lead.work_duration ?? "—" });
-    f.push({ name: "Product Risk Weight", impact: 14, direction: "−", note: lead.product });
-    f.push({ name: "Channel Quality", impact: 9, direction: "+", note: lead.channel ?? "—" });
-    f.push({ name: "Prior Relationship", impact: 7, direction: "+", note: lead.company_name ?? "—" });
-    return f.sort((a, b) => b.impact - a.impact);
-  }, [lead]);
+  const decision: "APPROVE" | "REVIEW" | "DECLINE" = ["Closed Won", "Approved"].includes(lead.current_status)
+    ? "APPROVE"
+    : ["Rejected", "RLM-Reject", "RLM-Expired"].includes(lead.current_status)
+      ? "DECLINE"
+      : "REVIEW";
 
-  const decision = ["Closed Won", "Approved"].includes(lead.current_status) ? "APPROVE" : lead.current_status === "Rejected" || lead.current_status === "RLM-Reject" ? "DECLINE" : "REVIEW";
+  // Synthetic SHAP-style contributions — direction flips based on the actual decision so
+  // approvals show mostly positive drivers and declines show negative drivers.
+  const features = useMemo(() => {
+    const score = lead.ai_score ?? 50;
+    const positive = decision === "APPROVE";
+    const mixed = decision === "REVIEW";
+    const f: { name: string; impact: number; direction: "+" | "−"; note: string }[] = [];
+    f.push({
+      name: "Debt-to-Income Ratio",
+      impact: Math.min(28, Math.max(8, positive ? 22 : 35 - score / 4)),
+      direction: positive ? "+" : "−",
+      note: `Estimated DTI band for ${lead.product}`,
+    });
+    f.push({
+      name: "Employment Tenure",
+      impact: 18,
+      direction: positive || mixed ? "+" : "−",
+      note: lead.work_duration || "—",
+    });
+    f.push({
+      name: "Product Risk Weight",
+      impact: 14,
+      direction: positive ? "+" : "−",
+      note: lead.product,
+    });
+    f.push({
+      name: "Channel Quality",
+      impact: 9,
+      direction: "+",
+      note: lead.channel || "—",
+    });
+    f.push({
+      name: "Prior Relationship / Employer",
+      impact: 7,
+      direction: positive || mixed ? "+" : "−",
+      note: lead.company_name || "—",
+    });
+    return f.sort((a, b) => b.impact - a.impact);
+  }, [lead, decision]);
+
+  const decisionTone =
+    decision === "APPROVE" ? "bg-emerald-600" : decision === "DECLINE" ? "bg-rose-600" : "bg-amber-500";
+
+  // Side-card body adapts to the decision so reviewers see WHY in every case.
+  const sideTitle =
+    decision === "APPROVE"
+      ? "Approval Drivers (XAI X-1)"
+      : decision === "DECLINE"
+        ? "Counterfactual (XAI X-2)"
+        : "Borderline Factors (XAI X-1)";
+  const sideTone =
+    decision === "APPROVE"
+      ? "border-emerald-300 bg-emerald-50 text-emerald-900"
+      : decision === "DECLINE"
+        ? "border-rose-300 bg-rose-50 text-rose-900"
+        : "border-amber-300 bg-amber-50 text-amber-900";
+  const sideHeadTone =
+    decision === "APPROVE" ? "text-emerald-900" : decision === "DECLINE" ? "text-rose-900" : "text-amber-900";
+  const sideBody =
+    decision === "APPROVE"
+      ? "Strong DTI headroom, stable tenure, and low product risk weight collectively lifted the score above the auto-approve threshold (≥ 70)."
+      : decision === "DECLINE"
+        ? "Smallest change to flip decision: reduce DTI by ~6 pp, extend employment ≥ 2 years, or lower financing amount by ~15%."
+        : "Score sits in the human-review band (40–69). Lead retained for RLM judgement; no single feature is disqualifying.";
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -286,8 +341,8 @@ function ExplainPanel({ lead }: { lead: ReturnType<typeof useElip>["leads"][numb
           <Meta k="RLM" v={rlmName(lead.assigned_rlm)} />
           <Meta k="Channel" v={lead.channel ?? "—"} />
         </div>
-        <div className="mt-4 px-3 py-2 rounded bg-navy text-navy-foreground text-center">
-          <div className="text-[10px] uppercase tracking-wider opacity-70">AI Recommendation</div>
+        <div className={`mt-4 px-3 py-2 rounded text-center text-white ${decisionTone}`}>
+          <div className="text-[10px] uppercase tracking-wider opacity-80">AI Recommendation</div>
           <div className="font-black text-lg">{decision}</div>
         </div>
         <div className="text-[10px] text-muted-foreground mt-2">
@@ -299,7 +354,8 @@ function ExplainPanel({ lead }: { lead: ReturnType<typeof useElip>["leads"][numb
       <div className="elip-card p-4 lg:col-span-2">
         <div className="font-bold text-navy text-sm">Top Feature Contributions (SHAP)</div>
         <div className="text-[11px] text-muted-foreground mb-3">
-          Per Jordan PDPL Art. 17 & CBJ AI-5.2 — customer may request these reason codes in writing.
+          Per Jordan PDPL Art. 17 & CBJ AI-5.2 — reason codes are logged for <b>every</b> AI-assisted
+          decision (approve, review, decline) and may be requested by the customer in writing.
         </div>
         <div className="space-y-2">
           {features.map((f) => (
@@ -322,13 +378,9 @@ function ExplainPanel({ lead }: { lead: ReturnType<typeof useElip>["leads"][numb
         </div>
 
         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px]">
-          <div className="rounded border border-amber-300 bg-amber-50 p-2">
-            <div className="font-bold text-amber-900 text-[10px] uppercase tracking-wider">
-              Counterfactual (XAI X-2)
-            </div>
-            <div className="text-amber-900">
-              Smallest change to flip decision: reduce DTI by ~6 pp or extend employment ≥ 2 years.
-            </div>
+          <div className={`rounded border p-2 ${sideTone}`}>
+            <div className={`font-bold ${sideHeadTone} text-[10px] uppercase tracking-wider`}>{sideTitle}</div>
+            <div>{sideBody}</div>
           </div>
           <div className="rounded border border-blue-300 bg-blue-50 p-2">
             <div className="font-bold text-blue-900 text-[10px] uppercase tracking-wider">
