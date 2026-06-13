@@ -826,50 +826,7 @@ function Assistant() {
           text: finalText.trim(),
           ts: Date.now(),
         };
-        // Auto language detection (two-tier):
-        //  1) Fast local script detector handles non-Latin alphabets instantly
-        //     (Arabic, Cyrillic, CJK, Hebrew, Thai, Devanagari, Greek, Hangul).
-        //  2) When the local detector returns en-US (Latin default) or the
-        //     recognizer-decoded text is short/garbled, ask the AI to identify
-        //     the spoken language — this catches Russian / French / Spanish /
-        //     etc. that Chrome transliterates into Latin gibberish.
-        if (langModeRef.current === "auto" && sp === "client") {
-          const localDetected = detectLang(finalText);
-          const applySwap = (next: string) => {
-            if (next && next !== langRef.current) {
-              console.log("[LANG] auto-switching", langRef.current, "→", next);
-              setLang(next);
-              langRef.current = next;
-              try {
-                recRef.current?.stop();
-              } catch {
-                /* will be restarted by the lang effect */
-              }
-            }
-          };
-          // Definitive non-Latin detection wins immediately
-          if (localDetected && localDetected !== "en-US") {
-            applySwap(localDetected);
-          } else {
-            // Ambiguous Latin transcript → ask the AI. Run in background so
-            // we don't block the UI; swap on next tick when confident.
-            const snippet = finalText.trim();
-            if (snippet.length >= 4) {
-              void detectLangFn({ data: { text: snippet } })
-                .then((r) => {
-                  if (
-                    r?.bcp47 &&
-                    r.bcp47 !== "und" &&
-                    r.confidence >= 0.6 &&
-                    langModeRef.current === "auto"
-                  ) {
-                    applySwap(r.bcp47);
-                  }
-                })
-                .catch((err) => console.warn("[LANG] AI detect failed", err));
-            }
-          }
-        }
+        applyAutoLanguageDetection(finalText, "final");
 
 
         setTurns((prev) => {
@@ -901,6 +858,7 @@ function Assistant() {
       }
       if (interim.trim()) {
         const sp = speakerRef.current;
+        applyAutoLanguageDetection(interim, "interim");
         setTurns((prev) => {
           const cleaned = prev.filter((p) => !p.interim);
           const next = [
