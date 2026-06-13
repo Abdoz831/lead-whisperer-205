@@ -543,10 +543,11 @@ function Assistant() {
   // Auto-mode "language probe": cycles the recognizer through candidate
   // locales when nothing is being recognized, so foreign speech eventually
   // hits a locale that produces transcripts.
+  const DEFAULT_AUTO_LOCALE = "en-US";
   const PROBE_LOCALES = [
+    "en-US",
     "ar-JO",
     "ru-RU",
-    "en-US",
     "es-ES",
     "fr-FR",
     "de-DE",
@@ -561,7 +562,28 @@ function Assistant() {
   const lastResultAtRef = useRef(0);
   const lastProbeRotateAtRef = useRef(0);
   const langLockedRef = useRef(false);
+  const lockedLangRef = useRef<string | null>(null);
   const probeTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  function wordCount(text: string) {
+    return text.trim().split(/\s+/).filter(Boolean).length;
+  }
+
+  function scriptEvidenceFor(locale: string, text: string) {
+    if (locale === "ar-JO") return (text.match(/[\u0600-\u06FF]/g) || []).length;
+    if (locale === "ru-RU") return (text.match(/[\u0400-\u04FF]/g) || []).length;
+    if (locale === "hi-IN") return (text.match(/[\u0900-\u097F]/g) || []).length;
+    if (locale === "zh-CN") return (text.match(/[\u4E00-\u9FFF]/g) || []).length;
+    if (locale === "ja-JP") return (text.match(/[\u3040-\u30FF\u4E00-\u9FFF]/g) || []).length;
+    return 0;
+  }
+
+  function transliterationEvidenceFor(locale: string, text: string) {
+    const normalized = ` ${text.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^\p{L}\p{N}]+/gu, " ")} `;
+    if (locale === "ar-JO") return scoreWords(normalized, ["salam", "marhaba", "ana", "ismi", "esmi", "biddi", "badde", "shukran", "mumkin", "raqm", "hatif", "shughl", "shoghol", "ratib"]);
+    if (locale === "ru-RU") return scoreWords(normalized, ["privet", "prevet", "menya", "minya", "zovut", "zavut", "spasibo", "spasiba", "pozhaluysta", "rabotayu", "zarplata"]);
+    return 0;
+  }
 
   // Detect spoken language from a chunk of recognized text using Unicode,
   // stopwords, and common phonetic/transliterated phrases.
