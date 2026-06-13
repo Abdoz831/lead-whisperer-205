@@ -523,6 +523,7 @@ function Assistant() {
   // AI extraction (debounced) — runs Lovable AI over the FULL conversation
   function scheduleAiExtraction(allTurns: Turn[]) {
     if (aiTimerRef.current) clearTimeout(aiTimerRef.current);
+    if (areAgentsKilled()) return;
     aiTimerRef.current = setTimeout(async () => {
       const transcript = allTurns
         .filter((t) => t.speaker !== "ai" && !t.interim)
@@ -534,6 +535,7 @@ function Assistant() {
       setAiThinking(true);
       const startedAt = Date.now();
       try {
+        if (areAgentsKilled()) return;
         const result = await extractFn({ data: { transcript } });
         if (seq !== aiSeqRef.current) return;
         const before = extractedRef.current;
