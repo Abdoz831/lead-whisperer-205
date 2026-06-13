@@ -225,7 +225,7 @@ function HermesHub() {
             />
             <button
               onClick={run}
-              disabled={busy || !status?.hermesConfigured}
+              disabled={busy || agentsKilled || !status?.hermesConfigured}
               className="bg-navy text-navy-foreground px-3 py-2 rounded text-xs font-semibold disabled:opacity-40"
             >
               {busy ? "Calling Hermes…" : "Invoke Hermes"}
