@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/elip/UI";
 import { useElip, PRODUCTS, CHANNELS, WORK_DURATIONS, type Product } from "@/lib/elip-data";
 import { extractLeadFromTranscript } from "@/lib/extract-lead.functions";
+import { detectLangFromText } from "@/lib/detect-lang.functions";
+
 import { areAgentsKilled, useAgentsKilled } from "@/lib/agents-kill-switch";
 
 export const Route = createFileRoute("/call-centre/assistant")({
@@ -479,6 +481,8 @@ const FIELD_LABELS: Record<keyof Extracted, string> = {
 function Assistant() {
   const { addLead, currentUser } = useElip();
   const extractFn = useServerFn(extractLeadFromTranscript);
+  const detectLangFn = useServerFn(detectLangFromText);
+
   const [agentsKilled] = useAgentsKilled();
   const [turns, setTurns] = useState<Turn[]>([
     {
@@ -745,21 +749,51 @@ function Assistant() {
           text: finalText.trim(),
           ts: Date.now(),
         };
-        // Auto language detection: when in auto mode and the client speaks a
-        // different language than the recognizer is set to, hot-swap the
-        // recognizer locale so subsequent transcripts come in correctly.
+        // Auto language detection (two-tier):
+        //  1) Fast local script detector handles non-Latin alphabets instantly
+        //     (Arabic, Cyrillic, CJK, Hebrew, Thai, Devanagari, Greek, Hangul).
+        //  2) When the local detector returns en-US (Latin default) or the
+        //     recognizer-decoded text is short/garbled, ask the AI to identify
+        //     the spoken language — this catches Russian / French / Spanish /
+        //     etc. that Chrome transliterates into Latin gibberish.
         if (langModeRef.current === "auto" && sp === "client") {
-          const detected = detectLang(finalText);
-          if (detected && detected !== langRef.current) {
-            setLang(detected);
-            langRef.current = detected;
-            try {
-              recRef.current?.stop();
-            } catch {
-              /* will be restarted by the lang effect */
+          const localDetected = detectLang(finalText);
+          const applySwap = (next: string) => {
+            if (next && next !== langRef.current) {
+              console.log("[LANG] auto-switching", langRef.current, "→", next);
+              setLang(next);
+              langRef.current = next;
+              try {
+                recRef.current?.stop();
+              } catch {
+                /* will be restarted by the lang effect */
+              }
+            }
+          };
+          // Definitive non-Latin detection wins immediately
+          if (localDetected && localDetected !== "en-US") {
+            applySwap(localDetected);
+          } else {
+            // Ambiguous Latin transcript → ask the AI. Run in background so
+            // we don't block the UI; swap on next tick when confident.
+            const snippet = finalText.trim();
+            if (snippet.length >= 4) {
+              void detectLangFn({ data: { text: snippet } })
+                .then((r) => {
+                  if (
+                    r?.bcp47 &&
+                    r.bcp47 !== "und" &&
+                    r.confidence >= 0.6 &&
+                    langModeRef.current === "auto"
+                  ) {
+                    applySwap(r.bcp47);
+                  }
+                })
+                .catch((err) => console.warn("[LANG] AI detect failed", err));
             }
           }
         }
+
 
         setTurns((prev) => {
           const cleaned = prev.filter((p) => !p.interim);
