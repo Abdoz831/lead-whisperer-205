@@ -356,6 +356,11 @@ Authorization: Bearer {HERMES_API_KEY}
               entry: <code>src/lib/hermes.functions.ts</code>.
             </div>
           </TabsContent>
+
+          {/* Transaction log */}
+          <TabsContent value="log">
+            <TransactionLogPanel />
+          </TabsContent>
         </Tabs>
 
         <div className="text-[11px] text-muted-foreground text-right">
