@@ -851,6 +851,7 @@ function Assistant() {
     const rec = recRef.current;
     if (!rec) return;
     rec.onresult = (e) => {
+      lastResultAtRef.current = Date.now();
       let interim = "";
       let finalText = "";
       for (let i = e.resultIndex; i < e.results.length; i++) {
