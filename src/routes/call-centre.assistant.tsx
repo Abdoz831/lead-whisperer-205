@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/elip/UI";
 import { useElip, PRODUCTS, CHANNELS, WORK_DURATIONS, type Product } from "@/lib/elip-data";
 import { extractLeadFromTranscript } from "@/lib/extract-lead.functions";
+import { areAgentsKilled, useAgentsKilled } from "@/lib/agents-kill-switch";
 
 export const Route = createFileRoute("/call-centre/assistant")({
   component: Assistant,
@@ -435,6 +436,7 @@ const FIELD_LABELS: Record<keyof Extracted, string> = {
 function Assistant() {
   const { addLead, currentUser } = useElip();
   const extractFn = useServerFn(extractLeadFromTranscript);
+  const [agentsKilled] = useAgentsKilled();
   const [turns, setTurns] = useState<Turn[]>([
     {
       id: "ai-0",
@@ -522,6 +524,7 @@ function Assistant() {
   // AI extraction (debounced) — runs Lovable AI over the FULL conversation
   function scheduleAiExtraction(allTurns: Turn[]) {
     if (aiTimerRef.current) clearTimeout(aiTimerRef.current);
+    if (areAgentsKilled()) return;
     aiTimerRef.current = setTimeout(async () => {
       const transcript = allTurns
         .filter((t) => t.speaker !== "ai" && !t.interim)
@@ -533,6 +536,7 @@ function Assistant() {
       setAiThinking(true);
       const startedAt = Date.now();
       try {
+        if (areAgentsKilled()) return;
         const result = await extractFn({ data: { transcript } });
         if (seq !== aiSeqRef.current) return;
         const before = extractedRef.current;
@@ -965,6 +969,11 @@ function Assistant() {
         subtitle="Speak naturally with the client. ELIP transcribes live and auto-fills the lead — review, then send to Sales."
       />
       <div className="p-6 grid grid-cols-12 gap-5 h-[calc(100vh-200px)]">
+        {agentsKilled && (
+          <div className="col-span-12 bg-rose-50 border-l-4 border-rose-600 text-rose-900 text-xs px-3 py-2 rounded">
+            🛑 <strong>Kill switch is ON.</strong> The AI extraction agent is paused — live transcription still works, but you'll need to fill the lead form manually. Re-enable from <a href="/management/hermes" className="underline font-semibold">Hermes Hub</a>.
+          </div>
+        )}
         {/* LEFT — Conversation */}
         <div className="col-span-7 elip-card flex flex-col overflow-hidden">
           <div className="px-4 py-3 border-b bg-card flex items-center justify-between">

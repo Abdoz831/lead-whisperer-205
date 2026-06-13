@@ -6,6 +6,7 @@ import { PageHeader, KPICard, ScoreCircle } from "@/components/elip/UI";
 import { CCNotesPanel } from "@/components/elip/CCNotesPanel";
 import { useElip, rlmName, stageClass, type Stage, type Lead } from "@/lib/elip-data";
 import { enrichLead } from "@/lib/enrich-lead.functions";
+import { areAgentsKilled, useAgentsKilled } from "@/lib/agents-kill-switch";
 import { GrowthOutboundPanel } from "@/components/elip/GrowthOutboundPanel";
 import { FollowupPanel } from "@/components/elip/FollowupPanel";
 
@@ -22,11 +23,16 @@ function Pipeline() {
   const [showBriefing, setShowBriefing] = useState<Lead | null>(null);
   const [rejectLead, setRejectLead] = useState<Lead | null>(null);
   const [tab, setTab] = useState<"active" | "followups" | "outbound">("active");
+  const [agentsKilled] = useAgentsKilled();
 
   const enrichingRef = useRef<Set<string>>(new Set());
 
   async function runEnrich(l: Lead, opts: { silent?: boolean } = {}) {
     if (enrichingRef.current.has(l.lead_id)) return;
+    if (areAgentsKilled()) {
+      if (!opts.silent) toast.error("🛑 Kill switch is ON — lead enrichment agent is disabled.");
+      return;
+    }
     enrichingRef.current.add(l.lead_id);
     updateLead(l.lead_id, { enrichment_status: "loading", enrichment_error: "" });
     try {
@@ -123,6 +129,11 @@ function Pipeline() {
     <>
       <PageHeader title="Sales Pipeline — Active Pipeline" subtitle="Deals in flight. Update stages, log RLM notes, push to close." />
       <div className="p-6">
+        {agentsKilled && (
+          <div className="mb-4 bg-rose-50 border-l-4 border-rose-600 text-rose-900 text-xs px-3 py-2 rounded">
+            🛑 <strong>Kill switch is ON.</strong> All AI agents (enrichment, follow-up advice, outbound prospecting) are paused. Re-enable from <a href="/management/hermes" className="underline font-semibold">Hermes Hub</a>.
+          </div>
+        )}
         <div className="flex gap-1 border-b border-zinc-200 mb-5">
           {([
             { id: "active", label: "Active Pipeline" },

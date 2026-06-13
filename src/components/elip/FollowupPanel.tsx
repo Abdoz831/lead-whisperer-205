@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { useElip, type Lead } from "@/lib/elip-data";
 import { getFollowupAdvice, type FollowupAdvice } from "@/lib/followup-advice.functions";
+import { areAgentsKilled, useAgentsKilled } from "@/lib/agents-kill-switch";
 
 const FOLLOWUP_STAGES = ["No Answer", "Follow-up Scheduled", "Docs Pending", "Booked", "Underwriting", "Approved"] as const;
 type FollowupStage = (typeof FOLLOWUP_STAGES)[number];
@@ -29,6 +30,7 @@ export function FollowupPanel() {
   const [advice, setAdvice] = useState<FollowupAdvice | null>(null);
   const [loading, setLoading] = useState(false);
   const [activeStage, setActiveStage] = useState<FollowupStage | "all">("all");
+  const [agentsKilled] = useAgentsKilled();
 
   const followups = useMemo<Lead[]>(
     () => leads.filter((l) => (FOLLOWUP_STAGES as readonly string[]).includes(l.current_status)),
@@ -49,6 +51,10 @@ export function FollowupPanel() {
   const visible = activeStage === "all" ? followups : byStage[activeStage];
 
   async function runAdvice() {
+    if (areAgentsKilled()) {
+      toast.error("🛑 Kill switch is ON — AI follow-up advice is disabled.");
+      return;
+    }
     if (visible.length === 0) {
       toast.info("No leads in this segment to advise on.");
       return;
@@ -84,7 +90,7 @@ export function FollowupPanel() {
 
   // Auto-run once on mount when leads exist
   useEffect(() => {
-    if (followups.length > 0 && !advice && !loading) runAdvice();
+    if (followups.length > 0 && !advice && !loading && !areAgentsKilled()) runAdvice();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -106,12 +112,19 @@ export function FollowupPanel() {
         </div>
         <button
           onClick={runAdvice}
-          disabled={loading}
+          disabled={loading || agentsKilled}
+          title={agentsKilled ? "Kill switch is ON — agents disabled" : ""}
           className="bg-navy disabled:bg-zinc-400 text-navy-foreground px-3 py-1.5 rounded text-xs font-semibold"
         >
-          {loading ? "Generating…" : advice ? "🔄 Refresh advice" : "✨ Generate advice"}
+          {agentsKilled ? "🛑 Agents disabled" : loading ? "Generating…" : advice ? "🔄 Refresh advice" : "✨ Generate advice"}
         </button>
       </div>
+
+      {agentsKilled && (
+        <div className="bg-rose-50 border-l-4 border-rose-600 text-rose-900 text-xs px-3 py-2 rounded">
+          🛑 <strong>Kill switch is ON.</strong> AI follow-up advice is paused — manage follow-ups manually using the stage playbook hints.
+        </div>
+      )}
 
       {advice?.summary && (
         <div className="bg-purple-50 border border-purple-200 text-purple-900 text-xs px-3 py-2 rounded">

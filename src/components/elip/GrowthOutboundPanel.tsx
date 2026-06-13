@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { findOutboundProspects, type OutboundProspectResult } from "@/lib/outbound-prospect.functions";
+import { areAgentsKilled, useAgentsKilled } from "@/lib/agents-kill-switch";
 
 type Prospect = OutboundProspectResult["prospects"][number];
 
@@ -26,8 +27,13 @@ export function GrowthOutboundPanel() {
   const [count, setCount] = useState<number>(DEFAULTS.count);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<OutboundProspectResult | null>(null);
+  const [agentsKilled] = useAgentsKilled();
 
   async function search() {
+    if (areAgentsKilled()) {
+      toast.error("🛑 Kill switch is ON — outbound prospecting agent is disabled.");
+      return;
+    }
     setLoading(true);
     try {
       const r = await run({
@@ -65,10 +71,17 @@ export function GrowthOutboundPanel() {
           </div>
           <button
             onClick={search}
-            disabled={loading}
+            disabled={loading || agentsKilled}
+            title={agentsKilled ? "Kill switch is ON — agents disabled" : ""}
             className="bg-purple-600 disabled:bg-zinc-400 text-white px-4 py-2 rounded text-xs font-bold whitespace-nowrap"
-          >{loading ? "Searching…" : "🔎 Find prospects"}</button>
+          >{agentsKilled ? "🛑 Agents disabled" : loading ? "Searching…" : "🔎 Find prospects"}</button>
         </div>
+
+        {agentsKilled && (
+          <div className="bg-rose-50 border-l-4 border-rose-600 text-rose-900 text-xs px-3 py-2 rounded mb-3">
+            🛑 <strong>Kill switch is ON.</strong> The outbound prospect agent is paused.
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3 text-xs">
           <Field label="Target titles (comma-separated)">
