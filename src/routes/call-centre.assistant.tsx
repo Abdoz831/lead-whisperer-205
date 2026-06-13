@@ -519,6 +519,20 @@ function Assistant() {
   listeningRef.current = listening;
   const langRef = useRef(lang);
   langRef.current = lang;
+  const langModeRef = useRef(langMode);
+  langModeRef.current = langMode;
+
+  // Detect language from a chunk of spoken text. Returns null if undecidable.
+  function detectLang(text: string): "en-US" | "ar-JO" | null {
+    if (!text) return null;
+    const arabicChars = (text.match(/[\u0600-\u06ff]/g) || []).length;
+    const latinChars = (text.match(/[A-Za-z]/g) || []).length;
+    if (arabicChars + latinChars < 2) return null;
+    if (arabicChars >= latinChars) return "ar-JO";
+    return "en-US";
+  }
+
+
 
 
   function pushDebug(entry: Omit<DebugEntry, "id" | "ts">) {
