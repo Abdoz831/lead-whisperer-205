@@ -491,6 +491,9 @@ function Assistant() {
   const [extracted, setExtracted] = useState<Extracted>({ ...EMPTY });
   const [listening, setListening] = useState(false);
   const [speaker, setSpeaker] = useState<"agent" | "client">("client");
+  const [langMode, setLangMode] = useState<"auto" | "en-US" | "ar-JO">("auto");
+  // The active recognition/TTS locale. In auto mode this is updated as the
+  // system hears Arabic vs English from the client.
   const [lang, setLang] = useState<"en-US" | "ar-JO">("en-US");
   const [supported, setSupported] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -516,6 +519,20 @@ function Assistant() {
   listeningRef.current = listening;
   const langRef = useRef(lang);
   langRef.current = lang;
+  const langModeRef = useRef(langMode);
+  langModeRef.current = langMode;
+
+  // Detect language from a chunk of spoken text. Returns null if undecidable.
+  function detectLang(text: string): "en-US" | "ar-JO" | null {
+    if (!text) return null;
+    const arabicChars = (text.match(/[\u0600-\u06ff]/g) || []).length;
+    const latinChars = (text.match(/[A-Za-z]/g) || []).length;
+    if (arabicChars + latinChars < 2) return null;
+    if (arabicChars >= latinChars) return "ar-JO";
+    return "en-US";
+  }
+
+
 
 
   function pushDebug(entry: Omit<DebugEntry, "id" | "ts">) {
@@ -667,6 +684,22 @@ function Assistant() {
           text: finalText.trim(),
           ts: Date.now(),
         };
+        // Auto language detection: when in auto mode and the client speaks a
+        // different language than the recognizer is set to, hot-swap the
+        // recognizer locale so subsequent transcripts come in correctly.
+        if (langModeRef.current === "auto" && sp === "client") {
+          const detected = detectLang(finalText);
+          if (detected && detected !== langRef.current) {
+            setLang(detected);
+            langRef.current = detected;
+            try {
+              recRef.current?.stop();
+            } catch {
+              /* will be restarted by the lang effect */
+            }
+          }
+        }
+
         setTurns((prev) => {
           const cleaned = prev.filter((p) => !p.interim);
           const next = [...cleaned, turn];
@@ -1156,18 +1189,33 @@ function Assistant() {
                 Speaking as{" "}
                 <strong>{speaker === "client" ? "the Client" : "the Bank Agent"}</strong>
                 {" · "}
-                {lang === "en-US" ? "English" : "Arabic (Jordan)"}
+                {langMode === "auto"
+                  ? `Auto · ${lang === "en-US" ? "English" : "Arabic"}`
+                  : lang === "en-US"
+                    ? "English"
+                    : "Arabic (Jordan)"}
               </p>
             </div>
             <div className="flex items-center gap-2">
               <select
-                value={lang}
-                onChange={(e) => setLang(e.target.value as "en-US" | "ar-JO")}
+                value={langMode}
+                onChange={(e) => {
+                  const v = e.target.value as "auto" | "en-US" | "ar-JO";
+                  setLangMode(v);
+                  langModeRef.current = v;
+                  if (v !== "auto") {
+                    setLang(v);
+                    langRef.current = v;
+                  }
+                }}
                 className="text-[11px] border rounded px-2 py-1 bg-white"
+                title="Language mode"
               >
+                <option value="auto">Auto-detect</option>
                 <option value="en-US">English</option>
                 <option value="ar-JO">العربية</option>
               </select>
+
               <button
                 onClick={() => setSpeaker((s) => (s === "client" ? "agent" : "client"))}
                 className="text-[11px] border rounded px-2 py-1 bg-white hover:bg-zinc-50"
