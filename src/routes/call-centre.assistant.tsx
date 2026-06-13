@@ -478,6 +478,17 @@ const FIELD_LABELS: Record<keyof Extracted, string> = {
   channel: "Channel",
 };
 
+function scoreWords(text: string, words: string[]) {
+  return words.reduce((score, word) => {
+    const normalizedWord = word.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
+    const isMultiWord = normalizedWord.includes(" ");
+    const matched = isMultiWord
+      ? text.includes(` ${normalizedWord} `)
+      : new RegExp(`\\b${normalizedWord.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "u").test(text);
+    return score + (matched ? 1 : 0);
+  }, 0);
+}
+
 function Assistant() {
   const { addLead, currentUser } = useElip();
   const extractFn = useServerFn(extractLeadFromTranscript);
