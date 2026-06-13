@@ -104,14 +104,6 @@ function Pipeline() {
     updateLead(id, patch);
   }
 
-  function submitAppian(id: string) {
-    toast.loading("Submitting to Appian...", { id: `appian-${id}` });
-    setTimeout(() => {
-      const ticket = `RLM-${Math.floor(100000 + Math.random() * 900000)}`;
-      updateLead(id, { appian_ticket: ticket });
-      toast.success(`Submitted. Appian Ticket: ${ticket}`, { id: `appian-${id}` });
-    }, 1800);
-  }
 
   function confirmReject(redirect: boolean) {
     if (!rejectLead) return;
