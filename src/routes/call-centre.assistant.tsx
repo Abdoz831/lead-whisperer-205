@@ -639,8 +639,12 @@ function Assistant() {
     recentClientSpeechRef.current = [...recentClientSpeechRef.current.slice(-3), snippet];
     const contextText = recentClientSpeechRef.current.join(" ").trim();
     const applySwap = (next: string, confidence: number, method: string) => {
-      if (!next || next === langRef.current) {
-        langLockedRef.current = true;
+      if (!next) return;
+      if (next === langRef.current) {
+        // In auto mode we start in en-US as a probe language. Do NOT lock on
+        // English, because Chrome may emit English-looking garbage for Russian
+        // or Arabic speech; keep probing until a real non-English match lands.
+        if (next !== "en-US") langLockedRef.current = true;
         return;
       }
       console.log("[LANG] auto-switching", langRef.current, "→", next, { confidence, method });
