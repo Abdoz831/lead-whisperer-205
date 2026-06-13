@@ -334,13 +334,13 @@ function SalesDashboard() {
         </div>
 
 
-        {/* Processed Ledger — immutable closed outcomes */}
+        {/* Processed Ledger — closed outcomes (editable header fields) */}
         <div className="elip-card overflow-hidden">
           <div className="px-4 py-3 border-b bg-emerald-50 flex items-center justify-between">
             <div>
               <h3 className="font-bold text-navy text-sm">📒 Processed Ledger</h3>
               <p className="text-[11px] text-muted-foreground">
-                Immutable record of all closed outcomes — wins, rejects and expired. No edits permitted.
+                Record of all closed outcomes — wins, rejects and expired. Customer, Product and RLM can be amended.
               </p>
             </div>
             <span className="text-xs font-semibold bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded">
@@ -358,12 +358,13 @@ function SalesDashboard() {
                   <th className="text-left px-3 py-2 font-semibold">RLM</th>
                   <th className="text-left px-3 py-2 font-semibold">Outcome</th>
                   <th className="text-left px-3 py-2 font-semibold">Date</th>
+                  <th className="text-right px-3 py-2 font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {ledger.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="text-center p-6 text-muted-foreground text-xs">
+                    <td colSpan={8} className="text-center p-6 text-muted-foreground text-xs">
                       No processed outcomes yet.
                     </td>
                   </tr>
@@ -388,15 +389,55 @@ function SalesDashboard() {
                       : outcomeLabel.includes("Expired")
                         ? "bg-zinc-200 text-zinc-700"
                         : "bg-red-100 text-red-900";
+                  const editing = editingId === l.lead_id;
                   return (
-                    <tr key={l.lead_id} className="border-t hover:bg-zinc-50">
+                    <tr key={l.lead_id} className="border-t hover:bg-zinc-50 align-middle">
                       <td className="px-3 py-2 font-mono text-[10px]">{l.lead_id}</td>
-                      <td className="px-3 py-2 font-semibold text-navy">{l.customer_name}</td>
-                      <td className="px-3 py-2 text-[11px]">{l.product}</td>
+                      <td className="px-3 py-2 font-semibold text-navy">
+                        {editing ? (
+                          <input
+                            value={draft.customer_name}
+                            onChange={(e) => setDraft({ ...draft, customer_name: e.target.value })}
+                            maxLength={120}
+                            className="w-full border rounded px-2 py-1 text-[11px] font-normal"
+                          />
+                        ) : (
+                          l.customer_name
+                        )}
+                      </td>
+                      <td className="px-3 py-2 text-[11px]">
+                        {editing ? (
+                          <select
+                            value={draft.product}
+                            onChange={(e) => setDraft({ ...draft, product: e.target.value as Product })}
+                            className="w-full border rounded px-2 py-1 text-[11px]"
+                          >
+                            {PRODUCTS.map((p) => (
+                              <option key={p} value={p}>{p}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          l.product
+                        )}
+                      </td>
                       <td className="px-3 py-2 tabular-nums text-[11px]">
                         {l.financing_amount.toLocaleString()}
                       </td>
-                      <td className="px-3 py-2 text-[11px]">{rlmName(l.assigned_rlm)}</td>
+                      <td className="px-3 py-2 text-[11px]">
+                        {editing ? (
+                          <select
+                            value={draft.assigned_rlm}
+                            onChange={(e) => setDraft({ ...draft, assigned_rlm: e.target.value })}
+                            className="w-full border rounded px-2 py-1 text-[11px]"
+                          >
+                            {RLMS.map((r) => (
+                              <option key={r.id} value={r.id}>{r.name}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          rlmName(l.assigned_rlm)
+                        )}
+                      </td>
                       <td className="px-3 py-2">
                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${tone}`}>
                           {outcomeLabel}
@@ -405,6 +446,51 @@ function SalesDashboard() {
                       <td className="px-3 py-2 text-muted-foreground text-[11px] tabular-nums">
                         {new Date(l.submitted_at).toLocaleDateString()}
                       </td>
+                      <td className="px-3 py-2 text-right whitespace-nowrap">
+                        {editing ? (
+                          <div className="inline-flex gap-1">
+                            <button
+                              onClick={() => {
+                                const name = draft.customer_name.trim();
+                                if (name.length < 2) {
+                                  toast.error("Customer name is required");
+                                  return;
+                                }
+                                updateLead(l.lead_id, {
+                                  customer_name: name.slice(0, 120),
+                                  product: draft.product,
+                                  assigned_rlm: draft.assigned_rlm,
+                                });
+                                setEditingId(null);
+                                toast.success(`Updated ${l.lead_id}`);
+                              }}
+                              className="bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-semibold"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => setEditingId(null)}
+                              className="border px-2 py-1 rounded text-[10px]"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setDraft({
+                                customer_name: l.customer_name,
+                                product: l.product,
+                                assigned_rlm: l.assigned_rlm,
+                              });
+                              setEditingId(l.lead_id);
+                            }}
+                            className="border border-navy text-navy px-2 py-1 rounded text-[10px] font-semibold hover:bg-navy hover:text-white"
+                          >
+                            ✏️ Edit
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}
@@ -412,6 +498,7 @@ function SalesDashboard() {
             </table>
           </div>
         </div>
+
 
         <div className="flex gap-3 text-xs">
 
