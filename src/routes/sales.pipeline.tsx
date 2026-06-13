@@ -129,6 +129,11 @@ function Pipeline() {
     <>
       <PageHeader title="Sales Pipeline — Active Pipeline" subtitle="Deals in flight. Update stages, log RLM notes, push to close." />
       <div className="p-6">
+        {agentsKilled && (
+          <div className="mb-4 bg-rose-50 border-l-4 border-rose-600 text-rose-900 text-xs px-3 py-2 rounded">
+            🛑 <strong>Kill switch is ON.</strong> All AI agents (enrichment, follow-up advice, outbound prospecting) are paused. Re-enable from <a href="/management/hermes" className="underline font-semibold">Hermes Hub</a>.
+          </div>
+        )}
         <div className="flex gap-1 border-b border-zinc-200 mb-5">
           {([
             { id: "active", label: "Active Pipeline" },
