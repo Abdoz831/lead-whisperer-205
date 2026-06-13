@@ -201,8 +201,7 @@ function KPIPage() {
                       open.status === "ok" ? "bg-green-100 text-green-800" :
                       open.status === "warn" ? "bg-amber-100 text-amber-900" :
                       "bg-zinc-100 text-zinc-700"
-                    }`}>{open.status === "ok" ? "✅ OK" : open.status === "warn" ? "⚠️ WARNING" : "⏸️ NOT ACTIVE"}</span>
-                    </div>
+                    }`}>{open.status === "ok" ? "✅ OK" : open.status === "warn" ? "⚠️ WARNING" : "⏸️ NOT ACTIVE"}</div>
                   </div>
                 </div>
 
