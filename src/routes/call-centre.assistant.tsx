@@ -540,6 +540,27 @@ function Assistant() {
   const recentClientSpeechRef = useRef<string[]>([]);
   const langDetectSeqRef = useRef(0);
   const langDetectLastAiAtRef = useRef(0);
+  // Auto-mode "language probe": cycles the recognizer through candidate
+  // locales when nothing is being recognized, so foreign speech eventually
+  // hits a locale that produces transcripts.
+  const PROBE_LOCALES = [
+    "en-US",
+    "ru-RU",
+    "ar-JO",
+    "es-ES",
+    "fr-FR",
+    "de-DE",
+    "hi-IN",
+    "zh-CN",
+    "ja-JP",
+    "tr-TR",
+    "pt-BR",
+    "it-IT",
+  ];
+  const probeIndexRef = useRef(0);
+  const lastResultAtRef = useRef(0);
+  const langLockedRef = useRef(false);
+  const probeTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Detect spoken language from a chunk of recognized text using Unicode,
   // stopwords, and common phonetic/transliterated phrases.
@@ -618,7 +639,10 @@ function Assistant() {
     recentClientSpeechRef.current = [...recentClientSpeechRef.current.slice(-3), snippet];
     const contextText = recentClientSpeechRef.current.join(" ").trim();
     const applySwap = (next: string, confidence: number, method: string) => {
-      if (!next || next === langRef.current) return;
+      if (!next || next === langRef.current) {
+        langLockedRef.current = true;
+        return;
+      }
       console.log("[LANG] auto-switching", langRef.current, "→", next, { confidence, method });
       pushDebug({
         source: "lang",
@@ -629,6 +653,7 @@ function Assistant() {
         total: 0,
         changed: [`Language → ${LANG_LABELS[next] ?? next}`],
       });
+      langLockedRef.current = true;
       setLang(next);
       langRef.current = next;
       try {
@@ -826,6 +851,7 @@ function Assistant() {
     const rec = recRef.current;
     if (!rec) return;
     rec.onresult = (e) => {
+      lastResultAtRef.current = Date.now();
       let interim = "";
       let finalText = "";
       for (let i = e.resultIndex; i < e.results.length; i++) {
@@ -901,7 +927,21 @@ function Assistant() {
       }
     };
     rec.onerror = (e) => {
-      setError(e.error || "Speech error");
+      const err = e.error || "Speech error";
+      // In auto mode, transient errors (no-speech, language-not-supported,
+      // audio-capture hiccups) must NOT kill the mic — they just mean this
+      // candidate locale isn't matching. Let the probe rotate.
+      const transient =
+        err === "no-speech" ||
+        err === "aborted" ||
+        err === "language-not-supported" ||
+        err === "audio-capture" ||
+        err === "network";
+      if (langModeRef.current === "auto" && transient) {
+        console.log("[LANG] transient SR error in auto mode, ignoring:", err);
+        return;
+      }
+      setError(err);
       setListening(false);
     };
     rec.onend = () => {
@@ -916,6 +956,47 @@ function Assistant() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listening, lang]);
+
+  // Auto-mode language probe: if we are listening in "auto" mode but have not
+  // received any transcript for ~3.5s and detection hasn't locked yet,
+  // rotate the recognizer to the next candidate locale.
+  useEffect(() => {
+    if (probeTimerRef.current) {
+      clearInterval(probeTimerRef.current);
+      probeTimerRef.current = null;
+    }
+    if (!listening || langMode !== "auto") return;
+    lastResultAtRef.current = Date.now();
+    probeTimerRef.current = setInterval(() => {
+      if (langLockedRef.current) return;
+      if (speakerRef.current !== "client") return;
+      const idle = Date.now() - lastResultAtRef.current;
+      if (idle < 3500) return;
+      probeIndexRef.current = (probeIndexRef.current + 1) % PROBE_LOCALES.length;
+      const next = PROBE_LOCALES[probeIndexRef.current];
+      if (next === langRef.current) return;
+      console.log("[LANG] probe rotating to", next, "after", idle, "ms idle");
+      pushDebug({
+        source: "lang",
+        transcript: "(probe)",
+        raw: { from: langRef.current, to: next, method: "probe", idleMs: idle },
+        confidence: 0,
+        filled: 0,
+        total: 0,
+        changed: [`Probe → ${LANG_LABELS[next] ?? next}`],
+      });
+      langRef.current = next;
+      setLang(next);
+      lastResultAtRef.current = Date.now();
+    }, 1000);
+    return () => {
+      if (probeTimerRef.current) {
+        clearInterval(probeTimerRef.current);
+        probeTimerRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listening, langMode]);
 
   // auto scroll
   useEffect(() => {
@@ -935,6 +1016,11 @@ function Assistant() {
       setListening(false);
     } else {
       try {
+        if (langModeRef.current === "auto") {
+          langLockedRef.current = false;
+          probeIndexRef.current = 0;
+        }
+        lastResultAtRef.current = Date.now();
         rec.start();
         setListening(true);
       } catch (err) {
@@ -1359,6 +1445,11 @@ function Assistant() {
                   if (v !== "auto") {
                     setLang(v);
                     langRef.current = v;
+                    langLockedRef.current = true;
+                  } else {
+                    langLockedRef.current = false;
+                    probeIndexRef.current = 0;
+                    lastResultAtRef.current = Date.now();
                   }
                 }}
                 className="text-[11px] border rounded px-2 py-1 bg-white"
