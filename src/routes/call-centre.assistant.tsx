@@ -975,11 +975,14 @@ function Assistant() {
     }
     if (!listening || langMode !== "auto") return;
     lastResultAtRef.current = Date.now();
+    lastProbeRotateAtRef.current = Date.now();
     probeTimerRef.current = setInterval(() => {
       if (langLockedRef.current) return;
       if (speakerRef.current !== "client") return;
-      const idle = Date.now() - lastResultAtRef.current;
-      if (idle < 3500) return;
+      const now = Date.now();
+      const idle = now - lastResultAtRef.current;
+      const sinceRotate = now - lastProbeRotateAtRef.current;
+      if (idle < 2500 && sinceRotate < 3000) return;
       probeIndexRef.current = (probeIndexRef.current + 1) % PROBE_LOCALES.length;
       const next = PROBE_LOCALES[probeIndexRef.current];
       if (next === langRef.current) return;
@@ -996,6 +999,7 @@ function Assistant() {
       langRef.current = next;
       setLang(next);
       lastResultAtRef.current = Date.now();
+      lastProbeRotateAtRef.current = Date.now();
     }, 1000);
     return () => {
       if (probeTimerRef.current) {
