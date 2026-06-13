@@ -559,6 +559,7 @@ function Assistant() {
   ];
   const probeIndexRef = useRef(0);
   const lastResultAtRef = useRef(0);
+  const lastProbeRotateAtRef = useRef(0);
   const langLockedRef = useRef(false);
   const probeTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -644,7 +645,9 @@ function Assistant() {
         // In auto mode we start in en-US as a probe language. Do NOT lock on
         // English, because Chrome may emit English-looking garbage for Russian
         // or Arabic speech; keep probing until a real non-English match lands.
-        if (next !== "en-US") langLockedRef.current = true;
+        if (next !== "en-US" || (method === "ai" && confidence >= 0.75 && contextText.split(/\s+/).length >= 3)) {
+          langLockedRef.current = true;
+        }
         return;
       }
       console.log("[LANG] auto-switching", langRef.current, "→", next, { confidence, method });
@@ -658,6 +661,7 @@ function Assistant() {
         changed: [`Language → ${LANG_LABELS[next] ?? next}`],
       });
       langLockedRef.current = true;
+      lastProbeRotateAtRef.current = Date.now();
       setLang(next);
       langRef.current = next;
       try {
