@@ -523,15 +523,75 @@ function Assistant() {
   const langModeRef = useRef(langMode);
   langModeRef.current = langMode;
 
-  // Detect language from a chunk of spoken text. Returns null if undecidable.
-  function detectLang(text: string): "en-US" | "ar-JO" | null {
+  // Detect spoken language from a chunk of recognized text using Unicode
+  // script blocks. Returns a BCP-47 locale or null if undecidable.
+  function detectLang(text: string): string | null {
     if (!text) return null;
-    const arabicChars = (text.match(/[\u0600-\u06ff]/g) || []).length;
-    const latinChars = (text.match(/[A-Za-z]/g) || []).length;
-    if (arabicChars + latinChars < 2) return null;
-    if (arabicChars >= latinChars) return "ar-JO";
-    return "en-US";
+    const counts = {
+      arabic: (text.match(/[\u0600-\u06FF]/g) || []).length,
+      devanagari: (text.match(/[\u0900-\u097F]/g) || []).length, // Hindi
+      cyrillic: (text.match(/[\u0400-\u04FF]/g) || []).length, // Russian
+      cjk: (text.match(/[\u4E00-\u9FFF]/g) || []).length, // Chinese
+      hiragana: (text.match(/[\u3040-\u30FF]/g) || []).length, // Japanese kana
+      hangul: (text.match(/[\uAC00-\uD7AF]/g) || []).length, // Korean
+      hebrew: (text.match(/[\u0590-\u05FF]/g) || []).length,
+      thai: (text.match(/[\u0E00-\u0E7F]/g) || []).length,
+      greek: (text.match(/[\u0370-\u03FF]/g) || []).length,
+      latin: (text.match(/[A-Za-zÀ-ÿĀ-žƒΑ-ωÑñÇç]/g) || []).length,
+    };
+    const total = Object.values(counts).reduce((a, b) => a + b, 0);
+    if (total < 2) return null;
+    // pick the dominant script
+    const top = (Object.entries(counts) as [keyof typeof counts, number][])
+      .sort((a, b) => b[1] - a[1])[0];
+    switch (top[0]) {
+      case "arabic": return "ar-JO";
+      case "devanagari": return "hi-IN";
+      case "cyrillic": return "ru-RU";
+      case "cjk": return /[\u3040-\u30FF]/.test(text) ? "ja-JP" : "zh-CN";
+      case "hiragana": return "ja-JP";
+      case "hangul": return "ko-KR";
+      case "hebrew": return "he-IL";
+      case "thai": return "th-TH";
+      case "greek": return "el-GR";
+      case "latin": {
+        // Lightweight Latin-script disambiguation using common stopwords.
+        const t = ` ${text.toLowerCase()} `;
+        const score = {
+          "en-US": /\b(the|and|i|you|with|for|salary|loan|name|please)\b/.test(t) ? 5 : 0,
+          "es-ES": /\b(el|la|los|las|y|de|por|para|hola|nombre|préstamo|salario)\b/.test(t) ? 5 : 0,
+          "fr-FR": /\b(le|la|les|et|de|pour|bonjour|nom|prêt|salaire|merci)\b/.test(t) ? 5 : 0,
+          "de-DE": /\b(der|die|das|und|ich|für|hallo|name|kredit|gehalt|bitte)\b/.test(t) ? 5 : 0,
+          "it-IT": /\b(il|la|e|di|per|ciao|nome|prestito|stipendio|grazie)\b/.test(t) ? 5 : 0,
+          "pt-BR": /\b(o|a|os|as|e|de|olá|nome|empréstimo|salário|obrigado)\b/.test(t) ? 5 : 0,
+          "tr-TR": /\b(ve|bir|için|merhaba|isim|maaş|kredi|teşekkür)\b/.test(t) ? 5 : 0,
+        };
+        const best = Object.entries(score).sort((a, b) => b[1] - a[1])[0];
+        return best[1] > 0 ? best[0] : "en-US";
+      }
+    }
+    return null;
   }
+
+  const LANG_LABELS: Record<string, string> = {
+    "en-US": "English",
+    "ar-JO": "العربية",
+    "fr-FR": "Français",
+    "es-ES": "Español",
+    "de-DE": "Deutsch",
+    "it-IT": "Italiano",
+    "pt-BR": "Português",
+    "tr-TR": "Türkçe",
+    "ru-RU": "Русский",
+    "hi-IN": "हिन्दी",
+    "zh-CN": "中文",
+    "ja-JP": "日本語",
+    "ko-KR": "한국어",
+    "he-IL": "עברית",
+    "th-TH": "ไทย",
+    "el-GR": "Ελληνικά",
+  };
+
 
 
 
