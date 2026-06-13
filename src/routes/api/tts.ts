@@ -26,23 +26,28 @@ export const Route = createFileRoute("/api/tts")({
 
         const lang = (body.lang ?? "ar-XA").toString();
         const isArabic = lang.toLowerCase().startsWith("ar");
-        // Google's Arabic locale code is ar-XA. Use a high-quality Wavenet/Neural2 voice.
+        // Google's Arabic locale is ar-XA. Chirp3-HD voices are the newest and
+        // by far the most natural-sounding Arabic voices Google offers.
+        // Fallback chain: Chirp3-HD -> Neural2 -> Wavenet.
         const languageCode = isArabic ? "ar-XA" : lang;
         const voiceName =
-          body.voice ??
-          (isArabic ? "ar-XA-Wavenet-B" : undefined);
+          body.voice ?? (isArabic ? "ar-XA-Chirp3-HD-Achernar" : undefined);
+
+        // Chirp3-HD voices do NOT support pitch or speakingRate adjustments;
+        // sending them returns 400. Only set those for non-Chirp voices.
+        const isChirp = (voiceName ?? "").toLowerCase().includes("chirp");
+        const audioConfig: Record<string, unknown> = { audioEncoding: "MP3" };
+        if (!isChirp) {
+          audioConfig.speakingRate = isArabic ? 0.95 : 1.0;
+          audioConfig.pitch = 0;
+        }
 
         const payload = {
           input: { text },
-          voice: voiceName
-            ? { languageCode, name: voiceName }
-            : { languageCode },
-          audioConfig: {
-            audioEncoding: "MP3",
-            speakingRate: isArabic ? 0.95 : 1.0,
-            pitch: 0,
-          },
+          voice: voiceName ? { languageCode, name: voiceName } : { languageCode },
+          audioConfig,
         };
+
 
         const res = await fetch(
           `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`,
