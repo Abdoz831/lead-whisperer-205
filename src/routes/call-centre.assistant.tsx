@@ -684,6 +684,22 @@ function Assistant() {
           text: finalText.trim(),
           ts: Date.now(),
         };
+        // Auto language detection: when in auto mode and the client speaks a
+        // different language than the recognizer is set to, hot-swap the
+        // recognizer locale so subsequent transcripts come in correctly.
+        if (langModeRef.current === "auto" && sp === "client") {
+          const detected = detectLang(finalText);
+          if (detected && detected !== langRef.current) {
+            setLang(detected);
+            langRef.current = detected;
+            try {
+              recRef.current?.stop();
+            } catch {
+              /* will be restarted by the lang effect */
+            }
+          }
+        }
+
         setTurns((prev) => {
           const cleaned = prev.filter((p) => !p.interim);
           const next = [...cleaned, turn];
