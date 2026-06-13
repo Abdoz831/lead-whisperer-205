@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/elip/UI";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { invokeHermes, hermesHealth } from "@/lib/hermes.functions";
+import { useAgentsKilled, AgentsDisabledError } from "@/lib/agents-kill-switch";
 
 export const Route = createFileRoute("/management/hermes")({
   component: HermesHub,
