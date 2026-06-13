@@ -491,10 +491,11 @@ function Assistant() {
   const [extracted, setExtracted] = useState<Extracted>({ ...EMPTY });
   const [listening, setListening] = useState(false);
   const [speaker, setSpeaker] = useState<"agent" | "client">("client");
-  const [langMode, setLangMode] = useState<"auto" | "en-US" | "ar-JO">("auto");
-  // The active recognition/TTS locale. In auto mode this is updated as the
-  // system hears Arabic vs English from the client.
-  const [lang, setLang] = useState<"en-US" | "ar-JO">("en-US");
+  const [langMode, setLangMode] = useState<"auto" | string>("auto");
+  // The active recognition/TTS BCP-47 locale. In auto mode this is updated
+  // automatically based on the script the client is using.
+  const [lang, setLang] = useState<string>("en-US");
+
   const [supported, setSupported] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [aiThinking, setAiThinking] = useState(false);
