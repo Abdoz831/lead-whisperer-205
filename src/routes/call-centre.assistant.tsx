@@ -1440,6 +1440,11 @@ function Assistant() {
                   if (v !== "auto") {
                     setLang(v);
                     langRef.current = v;
+                    langLockedRef.current = true;
+                  } else {
+                    langLockedRef.current = false;
+                    probeIndexRef.current = 0;
+                    lastResultAtRef.current = Date.now();
                   }
                 }}
                 className="text-[11px] border rounded px-2 py-1 bg-white"
