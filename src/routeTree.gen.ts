@@ -23,6 +23,7 @@ import { Route as ManagementHermesRouteImport } from './routes/management.hermes
 import { Route as ManagementChurnRouteImport } from './routes/management.churn'
 import { Route as ManagementAuditRouteImport } from './routes/management.audit'
 import { Route as CallCentreAssistantRouteImport } from './routes/call-centre.assistant'
+import { Route as ApiTtsRouteImport } from './routes/api/tts'
 import { Route as ApiPublicSlackEventsRouteImport } from './routes/api/public/slack.events'
 
 const IndexRoute = IndexRouteImport.update({
@@ -95,6 +96,11 @@ const CallCentreAssistantRoute = CallCentreAssistantRouteImport.update({
   path: '/call-centre/assistant',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTtsRoute = ApiTtsRouteImport.update({
+  id: '/api/tts',
+  path: '/api/tts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicSlackEventsRoute = ApiPublicSlackEventsRouteImport.update({
   id: '/api/public/slack/events',
   path: '/api/public/slack/events',
@@ -103,6 +109,7 @@ const ApiPublicSlackEventsRoute = ApiPublicSlackEventsRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/tts': typeof ApiTtsRoute
   '/call-centre/assistant': typeof CallCentreAssistantRoute
   '/management/audit': typeof ManagementAuditRoute
   '/management/churn': typeof ManagementChurnRoute
@@ -120,6 +127,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/tts': typeof ApiTtsRoute
   '/call-centre/assistant': typeof CallCentreAssistantRoute
   '/management/audit': typeof ManagementAuditRoute
   '/management/churn': typeof ManagementChurnRoute
@@ -138,6 +146,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/tts': typeof ApiTtsRoute
   '/call-centre/assistant': typeof CallCentreAssistantRoute
   '/management/audit': typeof ManagementAuditRoute
   '/management/churn': typeof ManagementChurnRoute
@@ -157,6 +166,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/api/tts'
     | '/call-centre/assistant'
     | '/management/audit'
     | '/management/churn'
@@ -174,6 +184,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/api/tts'
     | '/call-centre/assistant'
     | '/management/audit'
     | '/management/churn'
@@ -191,6 +202,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/api/tts'
     | '/call-centre/assistant'
     | '/management/audit'
     | '/management/churn'
@@ -209,6 +221,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiTtsRoute: typeof ApiTtsRoute
   CallCentreAssistantRoute: typeof CallCentreAssistantRoute
   ManagementAuditRoute: typeof ManagementAuditRoute
   ManagementChurnRoute: typeof ManagementChurnRoute
@@ -325,6 +338,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CallCentreAssistantRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/tts': {
+      id: '/api/tts'
+      path: '/api/tts'
+      fullPath: '/api/tts'
+      preLoaderRoute: typeof ApiTtsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/slack/events': {
       id: '/api/public/slack/events'
       path: '/api/public/slack/events'
@@ -337,6 +357,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiTtsRoute: ApiTtsRoute,
   CallCentreAssistantRoute: CallCentreAssistantRoute,
   ManagementAuditRoute: ManagementAuditRoute,
   ManagementChurnRoute: ManagementChurnRoute,
@@ -355,3 +376,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
