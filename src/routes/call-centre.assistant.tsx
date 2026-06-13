@@ -544,9 +544,9 @@ function Assistant() {
   // locales when nothing is being recognized, so foreign speech eventually
   // hits a locale that produces transcripts.
   const PROBE_LOCALES = [
-    "en-US",
     "ru-RU",
     "ar-JO",
+    "en-US",
     "es-ES",
     "fr-FR",
     "de-DE",
@@ -557,8 +557,9 @@ function Assistant() {
     "pt-BR",
     "it-IT",
   ];
-  const probeIndexRef = useRef(0);
+  const probeIndexRef = useRef(-1);
   const lastResultAtRef = useRef(0);
+  const lastProbeRotateAtRef = useRef(0);
   const langLockedRef = useRef(false);
   const probeTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -639,8 +640,14 @@ function Assistant() {
     recentClientSpeechRef.current = [...recentClientSpeechRef.current.slice(-3), snippet];
     const contextText = recentClientSpeechRef.current.join(" ").trim();
     const applySwap = (next: string, confidence: number, method: string) => {
-      if (!next || next === langRef.current) {
-        langLockedRef.current = true;
+      if (!next) return;
+      if (next === langRef.current) {
+        // In auto mode we start in en-US as a probe language. Do NOT lock on
+        // English, because Chrome may emit English-looking garbage for Russian
+        // or Arabic speech; keep probing until a real non-English match lands.
+        if (next !== "en-US" || (method === "ai" && confidence >= 0.75 && contextText.split(/\s+/).length >= 3)) {
+          langLockedRef.current = true;
+        }
         return;
       }
       console.log("[LANG] auto-switching", langRef.current, "→", next, { confidence, method });
@@ -654,6 +661,7 @@ function Assistant() {
         changed: [`Language → ${LANG_LABELS[next] ?? next}`],
       });
       langLockedRef.current = true;
+      lastProbeRotateAtRef.current = Date.now();
       setLang(next);
       langRef.current = next;
       try {
@@ -957,9 +965,8 @@ function Assistant() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listening, lang]);
 
-  // Auto-mode language probe: if we are listening in "auto" mode but have not
-  // received any transcript for ~3.5s and detection hasn't locked yet,
-  // rotate the recognizer to the next candidate locale.
+  // Auto-mode language probe: if we are listening in "auto" mode and detection
+  // has not locked yet, rotate the recognizer through candidate locales.
   useEffect(() => {
     if (probeTimerRef.current) {
       clearInterval(probeTimerRef.current);
@@ -967,11 +974,14 @@ function Assistant() {
     }
     if (!listening || langMode !== "auto") return;
     lastResultAtRef.current = Date.now();
+    lastProbeRotateAtRef.current = Date.now();
     probeTimerRef.current = setInterval(() => {
       if (langLockedRef.current) return;
       if (speakerRef.current !== "client") return;
-      const idle = Date.now() - lastResultAtRef.current;
-      if (idle < 3500) return;
+      const now = Date.now();
+      const idle = now - lastResultAtRef.current;
+      const sinceRotate = now - lastProbeRotateAtRef.current;
+      if (idle < 2500 && sinceRotate < 3000) return;
       probeIndexRef.current = (probeIndexRef.current + 1) % PROBE_LOCALES.length;
       const next = PROBE_LOCALES[probeIndexRef.current];
       if (next === langRef.current) return;
@@ -988,6 +998,7 @@ function Assistant() {
       langRef.current = next;
       setLang(next);
       lastResultAtRef.current = Date.now();
+      lastProbeRotateAtRef.current = Date.now();
     }, 1000);
     return () => {
       if (probeTimerRef.current) {
@@ -1019,6 +1030,9 @@ function Assistant() {
         if (langModeRef.current === "auto") {
           langLockedRef.current = false;
           probeIndexRef.current = 0;
+          setLang(PROBE_LOCALES[0]);
+          langRef.current = PROBE_LOCALES[0];
+          rec.lang = PROBE_LOCALES[0];
         }
         lastResultAtRef.current = Date.now();
         rec.start();
@@ -1449,6 +1463,8 @@ function Assistant() {
                   } else {
                     langLockedRef.current = false;
                     probeIndexRef.current = 0;
+                    setLang(PROBE_LOCALES[0]);
+                    langRef.current = PROBE_LOCALES[0];
                     lastResultAtRef.current = Date.now();
                   }
                 }}
