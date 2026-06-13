@@ -104,14 +104,6 @@ function Pipeline() {
     updateLead(id, patch);
   }
 
-  function submitAppian(id: string) {
-    toast.loading("Submitting to Appian...", { id: `appian-${id}` });
-    setTimeout(() => {
-      const ticket = `RLM-${Math.floor(100000 + Math.random() * 900000)}`;
-      updateLead(id, { appian_ticket: ticket });
-      toast.success(`Submitted. Appian Ticket: ${ticket}`, { id: `appian-${id}` });
-    }, 1800);
-  }
 
   function confirmReject(redirect: boolean) {
     if (!rejectLead) return;
@@ -260,10 +252,21 @@ function Pipeline() {
                           )}
                         </td>
                         <td className="px-2 py-2 font-mono text-[11px]">
-                          {l.appian_ticket || (l.current_status === "Booked" ? (
-                            <button onClick={() => submitAppian(l.lead_id)} className="bg-gold text-gold-foreground px-2 py-1 rounded text-[10px] font-semibold">Submit to Appian →</button>
-                          ) : <span className="text-muted-foreground">—</span>)}
+                          <input
+                            type="text"
+                            defaultValue={l.appian_ticket}
+                            onBlur={(e) => {
+                              const v = e.target.value.trim();
+                              if (v !== l.appian_ticket) {
+                                updateLead(l.lead_id, { appian_ticket: v });
+                                if (v) toast.success(`Appian ticket saved: ${v}`);
+                              }
+                            }}
+                            placeholder="RLM-XXXXXX"
+                            className="w-28 border border-zinc-300 rounded px-1.5 py-1 text-[11px] font-mono"
+                          />
                         </td>
+
                         <td className="px-2 py-2 whitespace-nowrap flex gap-1">
                           <button onClick={() => setShowBriefing(l)} className="bg-navy text-navy-foreground px-2 py-1 rounded text-[10px] font-semibold">Call Now</button>
                           <button onClick={() => { if (confirm("Mark as Closed Won? Irreversible.")) changeStage(l.lead_id, "Closed Won"); }} className="bg-green-600 text-white px-2 py-1 rounded text-[10px] font-semibold">Win ✓</button>

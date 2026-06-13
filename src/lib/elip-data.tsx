@@ -334,8 +334,8 @@ export function ElipProvider({ children }: { children: ReactNode }) {
       const sorted = [...counts.entries()].sort((a, b) => a[1] - b[1]);
       const rlmId = sorted[0][0];
       const rlmName = RLMS.find((r) => r.id === rlmId)!.name;
-      // P1/P2 go straight to Active Pipeline (Docs Pending); P3/P4 wait in the Queue for manual review.
-      const initialStatus: Stage = priority === "P1" || priority === "P2" ? "Docs Pending" : "Queued";
+      // All newly-submitted leads land directly in the Active Pipeline (Docs Pending) so the RLM keeps ownership.
+      const initialStatus: Stage = "Docs Pending";
       const lead: Lead = {
         ...input,
         lead_id: `L-${String(LEAD_COUNTER++).padStart(4, "0")}`,
