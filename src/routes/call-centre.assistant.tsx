@@ -701,7 +701,7 @@ function Assistant() {
     };
 
     const localDetected = detectLang(contextText) ?? detectLang(snippet);
-    if (localDetected && localDetected !== "en-US") {
+    if (localDetected) {
       applySwap(localDetected, 0.9, "local");
       return;
     }
@@ -1058,10 +1058,11 @@ function Assistant() {
       try {
         if (langModeRef.current === "auto") {
           langLockedRef.current = false;
+          lockedLangRef.current = null;
           probeIndexRef.current = 0;
-          setLang(PROBE_LOCALES[0]);
-          langRef.current = PROBE_LOCALES[0];
-          rec.lang = PROBE_LOCALES[0];
+          setLang(DEFAULT_AUTO_LOCALE);
+          langRef.current = DEFAULT_AUTO_LOCALE;
+          rec.lang = DEFAULT_AUTO_LOCALE;
         }
         lastResultAtRef.current = Date.now();
         rec.start();
