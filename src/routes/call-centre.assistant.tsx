@@ -436,6 +436,7 @@ const FIELD_LABELS: Record<keyof Extracted, string> = {
 function Assistant() {
   const { addLead, currentUser } = useElip();
   const extractFn = useServerFn(extractLeadFromTranscript);
+  const [agentsKilled] = useAgentsKilled();
   const [turns, setTurns] = useState<Turn[]>([
     {
       id: "ai-0",
@@ -968,6 +969,11 @@ function Assistant() {
         subtitle="Speak naturally with the client. ELIP transcribes live and auto-fills the lead — review, then send to Sales."
       />
       <div className="p-6 grid grid-cols-12 gap-5 h-[calc(100vh-200px)]">
+        {agentsKilled && (
+          <div className="col-span-12 bg-rose-50 border-l-4 border-rose-600 text-rose-900 text-xs px-3 py-2 rounded">
+            🛑 <strong>Kill switch is ON.</strong> The AI extraction agent is paused — live transcription still works, but you'll need to fill the lead form manually. Re-enable from <a href="/management/hermes" className="underline font-semibold">Hermes Hub</a>.
+          </div>
+        )}
         {/* LEFT — Conversation */}
         <div className="col-span-7 elip-card flex flex-col overflow-hidden">
           <div className="px-4 py-3 border-b bg-card flex items-center justify-between">
