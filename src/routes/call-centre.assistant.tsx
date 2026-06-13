@@ -557,7 +557,7 @@ function Assistant() {
     "pt-BR",
     "it-IT",
   ];
-  const probeIndexRef = useRef(0);
+  const probeIndexRef = useRef(-1);
   const lastResultAtRef = useRef(0);
   const lastProbeRotateAtRef = useRef(0);
   const langLockedRef = useRef(false);
@@ -1030,6 +1030,9 @@ function Assistant() {
         if (langModeRef.current === "auto") {
           langLockedRef.current = false;
           probeIndexRef.current = 0;
+          setLang(PROBE_LOCALES[0]);
+          langRef.current = PROBE_LOCALES[0];
+          rec.lang = PROBE_LOCALES[0];
         }
         lastResultAtRef.current = Date.now();
         rec.start();
@@ -1460,6 +1463,8 @@ function Assistant() {
                   } else {
                     langLockedRef.current = false;
                     probeIndexRef.current = 0;
+                    setLang(PROBE_LOCALES[0]);
+                    langRef.current = PROBE_LOCALES[0];
                     lastResultAtRef.current = Date.now();
                   }
                 }}
