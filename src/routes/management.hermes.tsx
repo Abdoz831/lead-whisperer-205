@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/elip/UI";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { invokeHermes, hermesHealth } from "@/lib/hermes.functions";
+import { useAgentsKilled, AgentsDisabledError } from "@/lib/agents-kill-switch";
 
 export const Route = createFileRoute("/management/hermes")({
   component: HermesHub,
@@ -55,11 +56,13 @@ const PLUG_POINTS = [
 function HermesHub() {
   const health = useServerFn(hermesHealth);
   const invoke = useServerFn(invokeHermes);
+  const [agentsKilled, setKilled] = useAgentsKilled();
 
   const { data: status, refetch } = useQuery({
     queryKey: ["hermes-health"],
     queryFn: () => health(),
     refetchInterval: 15_000,
+    enabled: !agentsKilled,
   });
 
   const [prompt, setPrompt] = useState(
@@ -69,6 +72,10 @@ function HermesHub() {
   const [busy, setBusy] = useState(false);
 
   async function run() {
+    if (agentsKilled) {
+      toast.error(new AgentsDisabledError().message);
+      return;
+    }
     setBusy(true);
     setResponse("");
     try {
@@ -81,6 +88,16 @@ function HermesHub() {
     }
   }
 
+  function toggleKill() {
+    const next = !agentsKilled;
+    setKilled(next);
+    toast[next ? "warning" : "success"](
+      next
+        ? "🛑 Kill switch ON — system is running without AI agents."
+        : "✅ Agents re-enabled.",
+    );
+  }
+
   return (
     <>
       <PageHeader
@@ -88,7 +105,39 @@ function HermesHub() {
         subtitle="Nous Research Hermes-Agent wired into ELIP — Call Centre, Sales, Audit, Re-Activation, and Slack."
       />
       <div className="p-6 space-y-6">
-        {/* Status strip */}
+        {/* Kill switch */}
+        <div
+          className={`elip-card border-l-4 p-4 flex items-center justify-between gap-4 ${
+            agentsKilled ? "border-l-rose-600 bg-rose-50" : "border-l-emerald-500 bg-emerald-50"
+          }`}
+        >
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className={`w-2.5 h-2.5 rounded-full ${agentsKilled ? "bg-rose-600 animate-pulse" : "bg-emerald-500"}`} />
+              <div className="text-[10px] uppercase tracking-wider font-bold text-zinc-600">
+                Global Agent Control
+              </div>
+            </div>
+            <div className="text-sm font-bold text-navy mt-1">
+              {agentsKilled ? "🛑 Agents DISABLED — system running without AI" : "🤖 Agents ACTIVE — Hermes & AI features online"}
+            </div>
+            <div className="text-[11px] text-muted-foreground mt-0.5">
+              The kill switch instantly halts all Hermes calls, follow-up advice, outbound prospecting,
+              call-assistant extraction, and any other agent-powered surface. Manual workflows continue normally.
+            </div>
+          </div>
+          <button
+            onClick={toggleKill}
+            className={`shrink-0 px-4 py-2 rounded text-xs font-bold uppercase tracking-wider border-2 ${
+              agentsKilled
+                ? "bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-700"
+                : "bg-rose-600 hover:bg-rose-700 text-white border-rose-800"
+            }`}
+          >
+            {agentsKilled ? "▶ Re-enable Agents" : "🛑 Kill Switch"}
+          </button>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <StatusCard
             label="Hermes Endpoint"
@@ -176,7 +225,7 @@ function HermesHub() {
             />
             <button
               onClick={run}
-              disabled={busy || !status?.hermesConfigured}
+              disabled={busy || agentsKilled || !status?.hermesConfigured}
               className="bg-navy text-navy-foreground px-3 py-2 rounded text-xs font-semibold disabled:opacity-40"
             >
               {busy ? "Calling Hermes…" : "Invoke Hermes"}
