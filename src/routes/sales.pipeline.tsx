@@ -23,6 +23,7 @@ function Pipeline() {
   const [showBriefing, setShowBriefing] = useState<Lead | null>(null);
   const [rejectLead, setRejectLead] = useState<Lead | null>(null);
   const [tab, setTab] = useState<"active" | "followups" | "outbound">("active");
+  const [agentsKilled] = useAgentsKilled();
 
   const enrichingRef = useRef<Set<string>>(new Set());
 
