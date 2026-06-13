@@ -540,6 +540,27 @@ function Assistant() {
   const recentClientSpeechRef = useRef<string[]>([]);
   const langDetectSeqRef = useRef(0);
   const langDetectLastAiAtRef = useRef(0);
+  // Auto-mode "language probe": cycles the recognizer through candidate
+  // locales when nothing is being recognized, so foreign speech eventually
+  // hits a locale that produces transcripts.
+  const PROBE_LOCALES = [
+    "en-US",
+    "ru-RU",
+    "ar-JO",
+    "es-ES",
+    "fr-FR",
+    "de-DE",
+    "hi-IN",
+    "zh-CN",
+    "ja-JP",
+    "tr-TR",
+    "pt-BR",
+    "it-IT",
+  ];
+  const probeIndexRef = useRef(0);
+  const lastResultAtRef = useRef(0);
+  const langLockedRef = useRef(false);
+  const probeTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Detect spoken language from a chunk of recognized text using Unicode,
   // stopwords, and common phonetic/transliterated phrases.
