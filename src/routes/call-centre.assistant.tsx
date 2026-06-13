@@ -856,29 +856,53 @@ function Assistant() {
     let playedViaGoogle = false;
     if (isArabic) {
       try {
+        console.log("[TTS] requesting Google for:", text.slice(0, 40));
         const res = await fetch("/api/tts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text, lang: "ar-XA" }),
         });
+        console.log("[TTS] /api/tts status:", res.status);
         if (res.ok) {
           const { audio, mime } = (await res.json()) as { audio: string; mime: string };
+          // Cancel any browser-TTS that might already be queued
+          try {
+            window.speechSynthesis.cancel();
+          } catch {
+            /* noop */
+          }
           await new Promise<void>((resolve) => {
             try {
               const audioEl = new Audio(`data:${mime};base64,${audio}`);
               audioEl.onended = () => resolve();
-              audioEl.onerror = () => resolve();
-              void audioEl.play().catch(() => resolve());
-            } catch {
+              audioEl.onerror = (e) => {
+                console.warn("[TTS] audio element error", e);
+                resolve();
+              };
+              audioEl.play().then(
+                () => {
+                  /* playing */
+                },
+                (err) => {
+                  console.warn("[TTS] audio.play rejected", err);
+                  resolve();
+                },
+              );
+            } catch (err) {
+              console.warn("[TTS] audio construction failed", err);
               resolve();
             }
           });
           playedViaGoogle = true;
+        } else {
+          const errText = await res.text();
+          console.warn("[TTS] Google TTS failed", res.status, errText);
         }
-      } catch {
-        /* fall back to browser TTS */
+      } catch (err) {
+        console.warn("[TTS] fetch /api/tts threw", err);
       }
     }
+
 
     if (!playedViaGoogle) {
       const voices = await getVoicesAsync();
