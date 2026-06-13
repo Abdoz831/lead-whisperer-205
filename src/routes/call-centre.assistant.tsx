@@ -639,7 +639,10 @@ function Assistant() {
     recentClientSpeechRef.current = [...recentClientSpeechRef.current.slice(-3), snippet];
     const contextText = recentClientSpeechRef.current.join(" ").trim();
     const applySwap = (next: string, confidence: number, method: string) => {
-      if (!next || next === langRef.current) return;
+      if (!next || next === langRef.current) {
+        langLockedRef.current = true;
+        return;
+      }
       console.log("[LANG] auto-switching", langRef.current, "→", next, { confidence, method });
       pushDebug({
         source: "lang",
@@ -650,6 +653,7 @@ function Assistant() {
         total: 0,
         changed: [`Language → ${LANG_LABELS[next] ?? next}`],
       });
+      langLockedRef.current = true;
       setLang(next);
       langRef.current = next;
       try {
