@@ -94,8 +94,10 @@ function Pipeline() {
   function changeStage(id: string, stage: Stage) {
     const patch: Partial<Lead> = { current_status: stage };
     if (stage === "No Answer") {
-      patch.no_answer_attempts = (active.find(l => l.lead_id === id)?.no_answer_attempts ?? 0) + 1;
-      toast.info("Lead moved to Re-Call Queue with optimal callback window");
+      const lead = active.find(l => l.lead_id === id);
+      patch.no_answer_attempts = (lead?.no_answer_attempts ?? 0) + 1;
+      patch.next_call_window = lead?.best_time_to_call ?? "";
+      toast.info("Lead added to Re-Call Schedule with optimal callback window");
     }
     if (stage === "Closed Won") {
       patch.outcome = "closed_won";
