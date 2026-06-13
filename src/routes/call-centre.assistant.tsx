@@ -852,26 +852,55 @@ function Assistant() {
     const ttsLang = requestedLang === "ar-JO" ? "ar-SA" : requestedLang;
     const isArabic = ttsLang.startsWith("ar");
 
-    const voices = await getVoicesAsync();
-    const voice = pickBestVoice(voices, ttsLang);
-
-    await new Promise<void>((resolve) => {
+    // For Arabic, prefer Google Cloud TTS (much higher quality than browser voices)
+    let playedViaGoogle = false;
+    if (isArabic) {
       try {
-        window.speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = voice?.lang || ttsLang;
-        if (voice) u.voice = voice;
-        // Arabic synthesizers sound clearer slightly slower; English at 1.0
-        u.rate = isArabic ? 0.9 : 1;
-        u.pitch = 1;
-        u.volume = 1;
-        u.onend = () => resolve();
-        u.onerror = () => resolve();
-        window.speechSynthesis.speak(u);
+        const res = await fetch("/api/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, lang: "ar-XA" }),
+        });
+        if (res.ok) {
+          const { audio, mime } = (await res.json()) as { audio: string; mime: string };
+          await new Promise<void>((resolve) => {
+            try {
+              const audioEl = new Audio(`data:${mime};base64,${audio}`);
+              audioEl.onended = () => resolve();
+              audioEl.onerror = () => resolve();
+              void audioEl.play().catch(() => resolve());
+            } catch {
+              resolve();
+            }
+          });
+          playedViaGoogle = true;
+        }
       } catch {
-        resolve();
+        /* fall back to browser TTS */
       }
-    });
+    }
+
+    if (!playedViaGoogle) {
+      const voices = await getVoicesAsync();
+      const voice = pickBestVoice(voices, ttsLang);
+      await new Promise<void>((resolve) => {
+        try {
+          window.speechSynthesis.cancel();
+          const u = new SpeechSynthesisUtterance(text);
+          u.lang = voice?.lang || ttsLang;
+          if (voice) u.voice = voice;
+          u.rate = isArabic ? 0.9 : 1;
+          u.pitch = 1;
+          u.volume = 1;
+          u.onend = () => resolve();
+          u.onerror = () => resolve();
+          window.speechSynthesis.speak(u);
+        } catch {
+          resolve();
+        }
+      });
+    }
+
     askingRef.current = false;
     setSpeaking(false);
     // Resume listening so we can hear the client's answer
