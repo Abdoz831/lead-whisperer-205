@@ -56,11 +56,13 @@ const PLUG_POINTS = [
 function HermesHub() {
   const health = useServerFn(hermesHealth);
   const invoke = useServerFn(invokeHermes);
+  const [agentsKilled, setKilled] = useAgentsKilled();
 
   const { data: status, refetch } = useQuery({
     queryKey: ["hermes-health"],
     queryFn: () => health(),
     refetchInterval: 15_000,
+    enabled: !agentsKilled,
   });
 
   const [prompt, setPrompt] = useState(
@@ -70,6 +72,10 @@ function HermesHub() {
   const [busy, setBusy] = useState(false);
 
   async function run() {
+    if (agentsKilled) {
+      toast.error(new AgentsDisabledError().message);
+      return;
+    }
     setBusy(true);
     setResponse("");
     try {
@@ -80,6 +86,16 @@ function HermesHub() {
     } finally {
       setBusy(false);
     }
+  }
+
+  function toggleKill() {
+    const next = !agentsKilled;
+    setKilled(next);
+    toast[next ? "warning" : "success"](
+      next
+        ? "🛑 Kill switch ON — system is running without AI agents."
+        : "✅ Agents re-enabled.",
+    );
   }
 
   return (
