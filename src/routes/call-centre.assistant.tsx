@@ -1003,15 +1003,21 @@ function Assistant() {
 
     // For Arabic, prefer Google Cloud TTS (much higher quality than browser voices)
     let playedViaGoogle = false;
-    if (isArabic) {
+    // Route every non-English language through Google Cloud TTS — browser
+    // voices for Arabic, Hindi, Chinese, Japanese, etc. are typically robotic.
+    const useGoogle = !ttsLang.toLowerCase().startsWith("en");
+    if (useGoogle) {
       try {
-        console.log("[TTS] requesting Google for:", text.slice(0, 40));
+        // ar-JO → ar-XA for Google's Arabic locale
+        const googleLang = isArabic ? "ar-XA" : ttsLang;
+        console.log("[TTS] requesting Google for:", googleLang, text.slice(0, 40));
         const res = await fetch("/api/tts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text, lang: "ar-XA" }),
+          body: JSON.stringify({ text, lang: googleLang }),
         });
         console.log("[TTS] /api/tts status:", res.status);
+
         if (res.ok) {
           const { audio, mime } = (await res.json()) as { audio: string; mime: string };
           // Cancel any browser-TTS that might already be queued
