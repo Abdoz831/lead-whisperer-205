@@ -779,6 +779,57 @@ function Assistant() {
     return null;
   }
 
+  // Wait for voices list to populate (Chrome loads it asynchronously)
+  async function getVoicesAsync(): Promise<SpeechSynthesisVoice[]> {
+    const synth = window.speechSynthesis;
+    const existing = synth.getVoices();
+    if (existing.length) return existing;
+    return new Promise((resolve) => {
+      const timer = setTimeout(() => resolve(synth.getVoices()), 800);
+      synth.onvoiceschanged = () => {
+        clearTimeout(timer);
+        resolve(synth.getVoices());
+      };
+    });
+  }
+
+  // Pick the best available voice for a given BCP-47 lang. For Arabic we
+  // strongly prefer native/online Arabic voices (Google/Microsoft Natural)
+  // over the default robotic fallback that Chrome ships with.
+  function pickBestVoice(
+    voices: SpeechSynthesisVoice[],
+    lang: string,
+  ): SpeechSynthesisVoice | null {
+    if (!voices.length) return null;
+    const isArabic = lang.toLowerCase().startsWith("ar");
+    if (isArabic) {
+      const arVoices = voices.filter((v) => v.lang.toLowerCase().startsWith("ar"));
+      if (!arVoices.length) return null;
+      const score = (v: SpeechSynthesisVoice) => {
+        const n = v.name.toLowerCase();
+        let s = 0;
+        // Highest-quality engines first
+        if (n.includes("natural") || n.includes("neural")) s += 100;
+        if (n.includes("google")) s += 80;
+        if (n.includes("microsoft")) s += 60;
+        if (n.includes("online")) s += 40;
+        if (!v.localService) s += 20; // cloud voices sound better than eSpeak
+        // Prefer modern MSA / Gulf locales over generic ar-001
+        const l = v.lang.toLowerCase();
+        if (l === "ar-sa" || l === "ar-eg" || l === "ar-ae") s += 15;
+        if (l === lang.toLowerCase()) s += 10;
+        // Penalize known low-quality fallbacks
+        if (n.includes("espeak") || n.includes("compact")) s -= 50;
+        return s;
+      };
+      arVoices.sort((a, b) => score(b) - score(a));
+      return arVoices[0];
+    }
+    const exact = voices.find((v) => v.lang.toLowerCase() === lang.toLowerCase());
+    if (exact) return exact;
+    return voices.find((v) => v.lang.toLowerCase().startsWith(lang.slice(0, 2))) || null;
+  }
+
   async function speak(text: string) {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
     askingRef.current = true;
@@ -793,13 +844,27 @@ function Assistant() {
       ...prev,
       { id: `ask-${Date.now()}`, speaker: "ai", text: `🔊 ${text}`, ts: Date.now() },
     ]);
+
+    const requestedLang = langRef.current;
+    // Map our UI lang to a broadly-supported locale. ar-JO has almost no
+    // native voice coverage; ar-SA is the de-facto MSA locale shipped by
+    // Google/Microsoft and sounds far more natural.
+    const ttsLang = requestedLang === "ar-JO" ? "ar-SA" : requestedLang;
+    const isArabic = ttsLang.startsWith("ar");
+
+    const voices = await getVoicesAsync();
+    const voice = pickBestVoice(voices, ttsLang);
+
     await new Promise<void>((resolve) => {
       try {
         window.speechSynthesis.cancel();
         const u = new SpeechSynthesisUtterance(text);
-        u.lang = langRef.current;
-        u.rate = 1;
+        u.lang = voice?.lang || ttsLang;
+        if (voice) u.voice = voice;
+        // Arabic synthesizers sound clearer slightly slower; English at 1.0
+        u.rate = isArabic ? 0.9 : 1;
         u.pitch = 1;
+        u.volume = 1;
         u.onend = () => resolve();
         u.onerror = () => resolve();
         window.speechSynthesis.speak(u);
