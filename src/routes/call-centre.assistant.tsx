@@ -1382,8 +1382,9 @@ function Assistant() {
       cc_notes: ccNotes,
       submitted_by_agent: currentUser.id,
     });
+    const destination = lead.priority === "P1" || lead.priority === "P2" ? "Active Pipeline" : "Leads Queue";
     toast.success(
-      `Lead ${lead.lead_id} routed to ${rlmName} · ${lead.priority} · AI Score ${lead.ai_score}/100`,
+      `Lead ${lead.lead_id} · ${lead.priority} · Score ${lead.ai_score}/100 → ${destination} (${rlmName})`,
     );
     reset();
   }
