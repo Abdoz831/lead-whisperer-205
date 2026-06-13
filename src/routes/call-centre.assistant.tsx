@@ -1016,6 +1016,11 @@ function Assistant() {
       setListening(false);
     } else {
       try {
+        if (langModeRef.current === "auto") {
+          langLockedRef.current = false;
+          probeIndexRef.current = 0;
+        }
+        lastResultAtRef.current = Date.now();
         rec.start();
         setListening(true);
       } catch (err) {
