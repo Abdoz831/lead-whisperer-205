@@ -7,6 +7,8 @@ import { PageHeader } from "@/components/elip/UI";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { invokeHermes, hermesHealth } from "@/lib/hermes.functions";
 import { useAgentsKilled, AgentsDisabledError } from "@/lib/agents-kill-switch";
+import { TransactionLogPanel } from "@/components/elip/TransactionLogPanel";
+import { logTransaction } from "@/lib/transaction-log";
 
 export const Route = createFileRoute("/management/hermes")({
   component: HermesHub,
@@ -81,8 +83,21 @@ function HermesHub() {
     try {
       const r = await invoke({ data: { prompt, source: "elip-sales" } });
       setResponse(r.text);
+      logTransaction({
+        kind: "hermes.invoked",
+        status: "success",
+        source: "management.hermes",
+        summary: `Hermes invoked from Live Test (${prompt.slice(0, 60)}${prompt.length > 60 ? "…" : ""})`,
+      });
     } catch (e) {
-      toast.error((e as Error).message);
+      const msg = (e as Error).message;
+      toast.error(msg);
+      logTransaction({
+        kind: "hermes.error",
+        status: "error",
+        source: "management.hermes",
+        summary: `Hermes invocation failed: ${msg}`,
+      });
     } finally {
       setBusy(false);
     }
@@ -96,6 +111,14 @@ function HermesHub() {
         ? "🛑 Kill switch ON — system is running without AI agents."
         : "✅ Agents re-enabled.",
     );
+    logTransaction({
+      kind: next ? "agents.killed" : "agents.enabled",
+      status: next ? "warning" : "info",
+      source: "management.hermes",
+      summary: next
+        ? "Kill switch engaged — all AI agents disabled system-wide."
+        : "Kill switch released — AI agents back online.",
+    });
   }
 
   return (
@@ -167,6 +190,7 @@ function HermesHub() {
             <TabsTrigger value="test">Live Test</TabsTrigger>
             <TabsTrigger value="slack">Slack App Setup</TabsTrigger>
             <TabsTrigger value="hermes">Hermes Deployment</TabsTrigger>
+            <TabsTrigger value="log">Transaction Log</TabsTrigger>
           </TabsList>
 
           {/* Integration map */}
@@ -331,6 +355,11 @@ Authorization: Bearer {HERMES_API_KEY}
               your Hermes deployment uses a different shape (e.g. OpenAI-compatible). Server fn
               entry: <code>src/lib/hermes.functions.ts</code>.
             </div>
+          </TabsContent>
+
+          {/* Transaction log */}
+          <TabsContent value="log">
+            <TransactionLogPanel />
           </TabsContent>
         </Tabs>
 
