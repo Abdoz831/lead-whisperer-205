@@ -556,8 +556,12 @@ function Assistant() {
       hebrew: (text.match(/[\u0590-\u05FF]/g) || []).length,
       thai: (text.match(/[\u0E00-\u0E7F]/g) || []).length,
       greek: (text.match(/[\u0370-\u03FF]/g) || []).length,
-      latin: (text.match(/[A-Za-zÀ-ÿĀ-žƒΑ-ωÑñÇç]/g) || []).length,
+      latin: (text.match(/[A-Za-zÀ-ÿĀ-žƒÑñÇç]/g) || []).length,
     };
+    if (/\b(privet|prevet|zovut|zavut|spasibo|spasiba|pozhaluysta|rabotayu|zarplata)\b/u.test(normalized)) return "ru-RU";
+    if (/\b(bonjour|mappelle|merci|salaire|travaille)\b/u.test(normalized)) return "fr-FR";
+    if (/\b(hola|gracias|llamo|prestamo|salario|trabajo)\b/u.test(normalized)) return "es-ES";
+    if (/\b(marhaba|shukran|biddi|badde|mumkin|ratib)\b/u.test(normalized)) return "ar-JO";
     const phraseScores: Record<string, number> = {
       "ru-RU": scoreWords(normalized, [
         "privet", "prevet", "pre vet", "menya", "minya", "zovut", "zavut", "spasibo", "pozhaluysta", "kredit", "zarplata", "rabotayu", "kompaniya", "telefon", "dobry", "da", "net", "ya", "mne", "moy", "moya",
