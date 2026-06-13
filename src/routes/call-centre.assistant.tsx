@@ -1491,11 +1491,13 @@ function Assistant() {
                     setLang(v);
                     langRef.current = v;
                     langLockedRef.current = true;
+                    lockedLangRef.current = v;
                   } else {
                     langLockedRef.current = false;
+                    lockedLangRef.current = null;
                     probeIndexRef.current = 0;
-                    setLang(PROBE_LOCALES[0]);
-                    langRef.current = PROBE_LOCALES[0];
+                    setLang(DEFAULT_AUTO_LOCALE);
+                    langRef.current = DEFAULT_AUTO_LOCALE;
                     lastResultAtRef.current = Date.now();
                   }
                 }}
