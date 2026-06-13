@@ -26,10 +26,10 @@ export const detectLangFromText = createServerFn({ method: "POST" })
       schema: Schema,
       maxOutputTokens: 128,
       system:
-        "You are a language identification model. Given a short text — which may be transliterated, phonetically misheard by an English speech recognizer, or contain mixed languages — identify the language the speaker is actually using. " +
-        "Examples: 'pre vet menya zovut ivan' → ru-RU (Russian). 'bonjour je m appelle' → fr-FR. 'hola me llamo' → es-ES. 'ni hao wo jiao' → zh-CN. 'salam ana esmi' → ar-JO. 'guten tag ich heisse' → de-DE. " +
-        "Return only the BCP-47 code plus a confidence 0-1.",
-      prompt: data.text,
+        "You are a sensitive language identification model for live speech recognition. Given a short transcript — possibly wrong because Chrome first decoded the speech as English — identify the language the speaker is most likely actually speaking. Do not default to English just because the text uses Latin letters. Treat transliteration, phonetic spellings, and garbled English-looking output as clues. " +
+        "Examples: 'pre vet menya zovut ivan', 'privet menya zovut ivan', 'menya zavut', 'spasiba ya rabotayu' → ru-RU. 'bonjour je m appelle' → fr-FR. 'hola me llamo' → es-ES. 'ni hao wo jiao' → zh-CN. 'salam ana esmi' → ar-JO. 'guten tag ich heisse' → de-DE. " +
+        "If there are any credible non-English clues, prefer that language with moderate confidence rather than en-US. Return only the BCP-47 code plus a confidence 0-1.",
+      prompt: `Transcript: ${data.text}`,
     });
     return object;
   });

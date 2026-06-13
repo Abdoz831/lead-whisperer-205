@@ -63,7 +63,7 @@ type Extracted = {
 type DebugEntry = {
   id: string;
   ts: number;
-  source: "interim" | "regex" | "ai" | "ai-error";
+  source: "interim" | "regex" | "ai" | "ai-error" | "lang";
   transcript: string;
   raw: unknown;
   confidence: number;
@@ -478,6 +478,17 @@ const FIELD_LABELS: Record<keyof Extracted, string> = {
   channel: "Channel",
 };
 
+function scoreWords(text: string, words: string[]) {
+  return words.reduce((score, word) => {
+    const normalizedWord = word.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
+    const isMultiWord = normalizedWord.includes(" ");
+    const matched = isMultiWord
+      ? text.includes(` ${normalizedWord} `)
+      : new RegExp(`\\b${normalizedWord.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "u").test(text);
+    return score + (matched ? 1 : 0);
+  }, 0);
+}
+
 function Assistant() {
   const { addLead, currentUser } = useElip();
   const extractFn = useServerFn(extractLeadFromTranscript);
@@ -526,11 +537,15 @@ function Assistant() {
   langRef.current = lang;
   const langModeRef = useRef(langMode);
   langModeRef.current = langMode;
+  const recentClientSpeechRef = useRef<string[]>([]);
+  const langDetectSeqRef = useRef(0);
+  const langDetectLastAiAtRef = useRef(0);
 
-  // Detect spoken language from a chunk of recognized text using Unicode
-  // script blocks. Returns a BCP-47 locale or null if undecidable.
+  // Detect spoken language from a chunk of recognized text using Unicode,
+  // stopwords, and common phonetic/transliterated phrases.
   function detectLang(text: string): string | null {
     if (!text) return null;
+    const normalized = ` ${text.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^\p{L}\p{N}]+/gu, " ")} `;
     const counts = {
       arabic: (text.match(/[\u0600-\u06FF]/g) || []).length,
       devanagari: (text.match(/[\u0900-\u097F]/g) || []).length, // Hindi
@@ -541,8 +556,27 @@ function Assistant() {
       hebrew: (text.match(/[\u0590-\u05FF]/g) || []).length,
       thai: (text.match(/[\u0E00-\u0E7F]/g) || []).length,
       greek: (text.match(/[\u0370-\u03FF]/g) || []).length,
-      latin: (text.match(/[A-Za-zÀ-ÿĀ-žƒΑ-ωÑñÇç]/g) || []).length,
+      latin: (text.match(/[A-Za-zÀ-ÿĀ-žƒÑñÇç]/g) || []).length,
     };
+    if (/\b(privet|prevet|zovut|zavut|spasibo|spasiba|pozhaluysta|rabotayu|zarplata)\b/u.test(normalized)) return "ru-RU";
+    if (/\b(bonjour|mappelle|merci|salaire|travaille)\b/u.test(normalized)) return "fr-FR";
+    if (/\b(hola|gracias|llamo|prestamo|salario|trabajo)\b/u.test(normalized)) return "es-ES";
+    if (/\b(marhaba|shukran|biddi|badde|mumkin|ratib)\b/u.test(normalized)) return "ar-JO";
+    const phraseScores: Record<string, number> = {
+      "ru-RU": scoreWords(normalized, [
+        "privet", "prevet", "pre vet", "menya", "minya", "zovut", "zavut", "spasibo", "pozhaluysta", "kredit", "zarplata", "rabotayu", "kompaniya", "telefon", "dobry", "da", "net", "ya", "mne", "moy", "moya",
+      ]),
+      "ar-JO": scoreWords(normalized, ["salam", "marhaba", "ana", "ismi", "esmi", "biddi", "badde", "shukran", "mumkin", "raqm", "hatif", "shughl", "shoghol", "ratib"]),
+      "fr-FR": scoreWords(normalized, ["bonjour", "salut", "merci", "appelle", "mappelle", "pret", "salaire", "travaille", "telephone", "nom"]),
+      "es-ES": scoreWords(normalized, ["hola", "gracias", "llamo", "nombre", "prestamo", "salario", "trabajo", "telefono", "empresa"]),
+      "de-DE": scoreWords(normalized, ["hallo", "danke", "ich", "heisse", "heiße", "kredit", "gehalt", "arbeite", "telefon", "firma"]),
+      "it-IT": scoreWords(normalized, ["ciao", "grazie", "chiamo", "nome", "prestito", "stipendio", "lavoro", "telefono", "azienda"]),
+      "pt-BR": scoreWords(normalized, ["ola", "obrigado", "chamo", "nome", "emprestimo", "salario", "trabalho", "telefone", "empresa"]),
+      "tr-TR": scoreWords(normalized, ["merhaba", "tesekkur", "teşekkür", "adim", "isim", "kredi", "maas", "maaş", "calisiyorum", "çalışıyorum", "telefon"]),
+    };
+    const phraseBest = Object.entries(phraseScores).sort((a, b) => b[1] - a[1])[0];
+    if (phraseBest?.[1] >= 2) return phraseBest[0];
+
     const total = Object.values(counts).reduce((a, b) => a + b, 0);
     if (total < 2) return null;
     // pick the dominant script
@@ -575,6 +609,53 @@ function Assistant() {
       }
     }
     return null;
+  }
+
+  function applyAutoLanguageDetection(text: string, source: "interim" | "final") {
+    const snippet = text.trim();
+    if (langModeRef.current !== "auto" || speakerRef.current !== "client" || snippet.length < 2) return;
+
+    recentClientSpeechRef.current = [...recentClientSpeechRef.current.slice(-3), snippet];
+    const contextText = recentClientSpeechRef.current.join(" ").trim();
+    const applySwap = (next: string, confidence: number, method: string) => {
+      if (!next || next === langRef.current) return;
+      console.log("[LANG] auto-switching", langRef.current, "→", next, { confidence, method });
+      pushDebug({
+        source: "lang",
+        transcript: contextText,
+        raw: { from: langRef.current, to: next, method, source },
+        confidence,
+        filled: 0,
+        total: 0,
+        changed: [`Language → ${LANG_LABELS[next] ?? next}`],
+      });
+      setLang(next);
+      langRef.current = next;
+      try {
+        recRef.current?.stop();
+      } catch {
+        /* will be restarted by the lang effect */
+      }
+    };
+
+    const localDetected = detectLang(contextText) ?? detectLang(snippet);
+    if (localDetected && localDetected !== "en-US") {
+      applySwap(localDetected, 0.9, "local");
+      return;
+    }
+
+    const now = Date.now();
+    if (contextText.length < 4 || (source === "interim" && now - langDetectLastAiAtRef.current < 1400)) return;
+    langDetectLastAiAtRef.current = now;
+    const seq = ++langDetectSeqRef.current;
+    void detectLangFn({ data: { text: contextText } })
+      .then((r) => {
+        if (seq !== langDetectSeqRef.current || langModeRef.current !== "auto") return;
+        if (r?.bcp47 && r.bcp47 !== "und" && r.confidence >= 0.35) {
+          applySwap(r.bcp47, r.confidence, "ai");
+        }
+      })
+      .catch((err) => console.warn("[LANG] AI detect failed", err));
   }
 
   const LANG_LABELS: Record<string, string> = {
@@ -637,8 +718,20 @@ function Assistant() {
     rec.interimResults = true;
     rec.lang = lang;
     recRef.current = rec;
+    if (listeningRef.current) {
+      window.setTimeout(() => {
+        try {
+          if (recRef.current === rec) rec.start();
+        } catch {
+          /* noop */
+        }
+      }, 0);
+    }
     return () => {
       try {
+        rec.onresult = null;
+        rec.onerror = null;
+        rec.onend = null;
         rec.stop();
       } catch {
         /* noop */
@@ -749,50 +842,7 @@ function Assistant() {
           text: finalText.trim(),
           ts: Date.now(),
         };
-        // Auto language detection (two-tier):
-        //  1) Fast local script detector handles non-Latin alphabets instantly
-        //     (Arabic, Cyrillic, CJK, Hebrew, Thai, Devanagari, Greek, Hangul).
-        //  2) When the local detector returns en-US (Latin default) or the
-        //     recognizer-decoded text is short/garbled, ask the AI to identify
-        //     the spoken language — this catches Russian / French / Spanish /
-        //     etc. that Chrome transliterates into Latin gibberish.
-        if (langModeRef.current === "auto" && sp === "client") {
-          const localDetected = detectLang(finalText);
-          const applySwap = (next: string) => {
-            if (next && next !== langRef.current) {
-              console.log("[LANG] auto-switching", langRef.current, "→", next);
-              setLang(next);
-              langRef.current = next;
-              try {
-                recRef.current?.stop();
-              } catch {
-                /* will be restarted by the lang effect */
-              }
-            }
-          };
-          // Definitive non-Latin detection wins immediately
-          if (localDetected && localDetected !== "en-US") {
-            applySwap(localDetected);
-          } else {
-            // Ambiguous Latin transcript → ask the AI. Run in background so
-            // we don't block the UI; swap on next tick when confident.
-            const snippet = finalText.trim();
-            if (snippet.length >= 4) {
-              void detectLangFn({ data: { text: snippet } })
-                .then((r) => {
-                  if (
-                    r?.bcp47 &&
-                    r.bcp47 !== "und" &&
-                    r.confidence >= 0.6 &&
-                    langModeRef.current === "auto"
-                  ) {
-                    applySwap(r.bcp47);
-                  }
-                })
-                .catch((err) => console.warn("[LANG] AI detect failed", err));
-            }
-          }
-        }
+        applyAutoLanguageDetection(finalText, "final");
 
 
         setTurns((prev) => {
@@ -824,6 +874,7 @@ function Assistant() {
       }
       if (interim.trim()) {
         const sp = speakerRef.current;
+        applyAutoLanguageDetection(interim, "interim");
         setTurns((prev) => {
           const cleaned = prev.filter((p) => !p.interim);
           const next = [
@@ -854,16 +905,17 @@ function Assistant() {
       setListening(false);
     };
     rec.onend = () => {
-      if (listening) {
+      const current = recRef.current;
+      if (listeningRef.current && current && current.lang === langRef.current) {
         try {
-          rec.start();
+          current.start();
         } catch {
           /* noop */
         }
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [listening]);
+  }, [listening, lang]);
 
   // auto scroll
   useEffect(() => {
@@ -904,6 +956,8 @@ function Assistant() {
     }
     autoAskRef.current = false;
     submittedRef.current = false;
+    recentClientSpeechRef.current = [];
+    langDetectSeqRef.current += 1;
 
     setAutoAsk(false);
     lastAskedRef.current = null;
