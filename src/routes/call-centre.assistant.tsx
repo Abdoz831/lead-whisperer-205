@@ -544,8 +544,8 @@ function Assistant() {
   // locales when nothing is being recognized, so foreign speech eventually
   // hits a locale that produces transcripts.
   const PROBE_LOCALES = [
-    "ru-RU",
     "ar-JO",
+    "ru-RU",
     "en-US",
     "es-ES",
     "fr-FR",
