@@ -28,6 +28,10 @@ function Pipeline() {
 
   async function runEnrich(l: Lead, opts: { silent?: boolean } = {}) {
     if (enrichingRef.current.has(l.lead_id)) return;
+    if (areAgentsKilled()) {
+      if (!opts.silent) toast.error("🛑 Kill switch is ON — lead enrichment agent is disabled.");
+      return;
+    }
     enrichingRef.current.add(l.lead_id);
     updateLead(l.lead_id, { enrichment_status: "loading", enrichment_error: "" });
     try {
