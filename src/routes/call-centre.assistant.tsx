@@ -1251,17 +1251,15 @@ function Assistant() {
                 <strong>{speaker === "client" ? "the Client" : "the Bank Agent"}</strong>
                 {" · "}
                 {langMode === "auto"
-                  ? `Auto · ${lang === "en-US" ? "English" : "Arabic"}`
-                  : lang === "en-US"
-                    ? "English"
-                    : "Arabic (Jordan)"}
+                  ? `Auto · ${LANG_LABELS[lang] ?? lang}`
+                  : (LANG_LABELS[lang] ?? lang)}
               </p>
             </div>
             <div className="flex items-center gap-2">
               <select
                 value={langMode}
                 onChange={(e) => {
-                  const v = e.target.value as "auto" | "en-US" | "ar-JO";
+                  const v = e.target.value;
                   setLangMode(v);
                   langModeRef.current = v;
                   if (v !== "auto") {
@@ -1272,10 +1270,14 @@ function Assistant() {
                 className="text-[11px] border rounded px-2 py-1 bg-white"
                 title="Language mode"
               >
-                <option value="auto">Auto-detect</option>
-                <option value="en-US">English</option>
-                <option value="ar-JO">العربية</option>
+                <option value="auto">Auto-detect (any language)</option>
+                {Object.entries(LANG_LABELS).map(([code, label]) => (
+                  <option key={code} value={code}>
+                    {label}
+                  </option>
+                ))}
               </select>
+
 
               <button
                 onClick={() => setSpeaker((s) => (s === "client" ? "agent" : "client"))}
