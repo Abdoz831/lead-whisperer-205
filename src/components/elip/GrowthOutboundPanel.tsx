@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { findOutboundProspects, type OutboundProspectResult } from "@/lib/outbound-prospect.functions";
+import { areAgentsKilled, useAgentsKilled } from "@/lib/agents-kill-switch";
 
 type Prospect = OutboundProspectResult["prospects"][number];
 

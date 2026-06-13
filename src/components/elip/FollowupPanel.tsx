@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { useElip, type Lead } from "@/lib/elip-data";
 import { getFollowupAdvice, type FollowupAdvice } from "@/lib/followup-advice.functions";
+import { areAgentsKilled, useAgentsKilled } from "@/lib/agents-kill-switch";
 
 const FOLLOWUP_STAGES = ["No Answer", "Follow-up Scheduled", "Docs Pending", "Booked", "Underwriting", "Approved"] as const;
 type FollowupStage = (typeof FOLLOWUP_STAGES)[number];

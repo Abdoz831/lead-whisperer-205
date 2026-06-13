@@ -6,6 +6,7 @@ import { PageHeader, KPICard, ScoreCircle } from "@/components/elip/UI";
 import { CCNotesPanel } from "@/components/elip/CCNotesPanel";
 import { useElip, rlmName, stageClass, type Stage, type Lead } from "@/lib/elip-data";
 import { enrichLead } from "@/lib/enrich-lead.functions";
+import { areAgentsKilled, useAgentsKilled } from "@/lib/agents-kill-switch";
 import { GrowthOutboundPanel } from "@/components/elip/GrowthOutboundPanel";
 import { FollowupPanel } from "@/components/elip/FollowupPanel";
 
