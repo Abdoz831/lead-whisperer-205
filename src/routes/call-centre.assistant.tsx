@@ -714,8 +714,20 @@ function Assistant() {
     rec.interimResults = true;
     rec.lang = lang;
     recRef.current = rec;
+    if (listeningRef.current) {
+      window.setTimeout(() => {
+        try {
+          if (recRef.current === rec) rec.start();
+        } catch {
+          /* noop */
+        }
+      }, 0);
+    }
     return () => {
       try {
+        rec.onresult = null;
+        rec.onerror = null;
+        rec.onend = null;
         rec.stop();
       } catch {
         /* noop */
@@ -889,16 +901,17 @@ function Assistant() {
       setListening(false);
     };
     rec.onend = () => {
-      if (listening) {
+      const current = recRef.current;
+      if (listeningRef.current && current && current.lang === langRef.current) {
         try {
-          rec.start();
+          current.start();
         } catch {
           /* noop */
         }
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [listening]);
+  }, [listening, lang]);
 
   // auto scroll
   useEffect(() => {
@@ -939,6 +952,8 @@ function Assistant() {
     }
     autoAskRef.current = false;
     submittedRef.current = false;
+    recentClientSpeechRef.current = [];
+    langDetectSeqRef.current += 1;
 
     setAutoAsk(false);
     lastAskedRef.current = null;
