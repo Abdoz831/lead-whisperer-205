@@ -544,9 +544,9 @@ function Assistant() {
   // locales when nothing is being recognized, so foreign speech eventually
   // hits a locale that produces transcripts.
   const PROBE_LOCALES = [
-    "en-US",
     "ru-RU",
     "ar-JO",
+    "en-US",
     "es-ES",
     "fr-FR",
     "de-DE",
@@ -965,9 +965,8 @@ function Assistant() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listening, lang]);
 
-  // Auto-mode language probe: if we are listening in "auto" mode but have not
-  // received any transcript for ~3.5s and detection hasn't locked yet,
-  // rotate the recognizer to the next candidate locale.
+  // Auto-mode language probe: if we are listening in "auto" mode and detection
+  // has not locked yet, rotate the recognizer through candidate locales.
   useEffect(() => {
     if (probeTimerRef.current) {
       clearInterval(probeTimerRef.current);
