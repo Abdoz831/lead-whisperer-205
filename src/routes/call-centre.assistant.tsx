@@ -481,6 +481,8 @@ const FIELD_LABELS: Record<keyof Extracted, string> = {
 function Assistant() {
   const { addLead, currentUser } = useElip();
   const extractFn = useServerFn(extractLeadFromTranscript);
+  const detectLangFn = useServerFn(detectLangFromText);
+
   const [agentsKilled] = useAgentsKilled();
   const [turns, setTurns] = useState<Turn[]>([
     {
