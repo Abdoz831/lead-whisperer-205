@@ -29,6 +29,12 @@ function hoursAgo(h: number): string {
 
 function SalesDashboard() {
   const { leads, updateLead } = useElip();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<{ customer_name: string; product: Product; assigned_rlm: string }>({
+    customer_name: "",
+    product: PRODUCTS[0],
+    assigned_rlm: RLMS[0].id,
+  });
 
   const stats = useMemo(() => {
     const totalAmount = leads.reduce((s, l) => s + (l.financing_amount || 0), 0);
