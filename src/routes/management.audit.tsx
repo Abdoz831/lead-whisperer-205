@@ -198,11 +198,31 @@ function AuditPageInner() {
 
           {/* Explainable AI */}
           <TabsContent value="explain" className="space-y-3">
+            <div className="elip-card p-3 flex items-center gap-3">
+              <label className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground whitespace-nowrap">
+                Client
+              </label>
+              <select
+                value={selected?.lead_id ?? ""}
+                onChange={(e) => setSelectedLeadId(e.target.value)}
+                className="flex-1 border border-zinc-300 rounded px-3 py-2 text-xs bg-card font-medium text-navy"
+              >
+                {auditable.length === 0 && <option value="">No auditable leads</option>}
+                {auditable.map((l) => (
+                  <option key={l.lead_id} value={l.lead_id}>
+                    {l.customer_name} — {l.lead_id} · {l.product} · score {l.ai_score} · {l.current_status}
+                  </option>
+                ))}
+              </select>
+              <span className="text-[10px] text-muted-foreground hidden md:block">
+                Pick a client to view their XAI reason codes
+              </span>
+            </div>
             {selected ? (
               <ExplainPanel lead={selected} />
             ) : (
               <div className="elip-card p-6 text-center text-xs text-muted-foreground">
-                Select a transaction from the Audit Ledger to view its reason codes.
+                No transactions available to explain yet.
               </div>
             )}
           </TabsContent>
