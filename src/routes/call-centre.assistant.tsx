@@ -491,10 +491,11 @@ function Assistant() {
   const [extracted, setExtracted] = useState<Extracted>({ ...EMPTY });
   const [listening, setListening] = useState(false);
   const [speaker, setSpeaker] = useState<"agent" | "client">("client");
-  const [langMode, setLangMode] = useState<"auto" | "en-US" | "ar-JO">("auto");
-  // The active recognition/TTS locale. In auto mode this is updated as the
-  // system hears Arabic vs English from the client.
-  const [lang, setLang] = useState<"en-US" | "ar-JO">("en-US");
+  const [langMode, setLangMode] = useState<"auto" | string>("auto");
+  // The active recognition/TTS BCP-47 locale. In auto mode this is updated
+  // automatically based on the script the client is using.
+  const [lang, setLang] = useState<string>("en-US");
+
   const [supported, setSupported] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [aiThinking, setAiThinking] = useState(false);
@@ -522,15 +523,75 @@ function Assistant() {
   const langModeRef = useRef(langMode);
   langModeRef.current = langMode;
 
-  // Detect language from a chunk of spoken text. Returns null if undecidable.
-  function detectLang(text: string): "en-US" | "ar-JO" | null {
+  // Detect spoken language from a chunk of recognized text using Unicode
+  // script blocks. Returns a BCP-47 locale or null if undecidable.
+  function detectLang(text: string): string | null {
     if (!text) return null;
-    const arabicChars = (text.match(/[\u0600-\u06ff]/g) || []).length;
-    const latinChars = (text.match(/[A-Za-z]/g) || []).length;
-    if (arabicChars + latinChars < 2) return null;
-    if (arabicChars >= latinChars) return "ar-JO";
-    return "en-US";
+    const counts = {
+      arabic: (text.match(/[\u0600-\u06FF]/g) || []).length,
+      devanagari: (text.match(/[\u0900-\u097F]/g) || []).length, // Hindi
+      cyrillic: (text.match(/[\u0400-\u04FF]/g) || []).length, // Russian
+      cjk: (text.match(/[\u4E00-\u9FFF]/g) || []).length, // Chinese
+      hiragana: (text.match(/[\u3040-\u30FF]/g) || []).length, // Japanese kana
+      hangul: (text.match(/[\uAC00-\uD7AF]/g) || []).length, // Korean
+      hebrew: (text.match(/[\u0590-\u05FF]/g) || []).length,
+      thai: (text.match(/[\u0E00-\u0E7F]/g) || []).length,
+      greek: (text.match(/[\u0370-\u03FF]/g) || []).length,
+      latin: (text.match(/[A-Za-zÀ-ÿĀ-žƒΑ-ωÑñÇç]/g) || []).length,
+    };
+    const total = Object.values(counts).reduce((a, b) => a + b, 0);
+    if (total < 2) return null;
+    // pick the dominant script
+    const top = (Object.entries(counts) as [keyof typeof counts, number][])
+      .sort((a, b) => b[1] - a[1])[0];
+    switch (top[0]) {
+      case "arabic": return "ar-JO";
+      case "devanagari": return "hi-IN";
+      case "cyrillic": return "ru-RU";
+      case "cjk": return /[\u3040-\u30FF]/.test(text) ? "ja-JP" : "zh-CN";
+      case "hiragana": return "ja-JP";
+      case "hangul": return "ko-KR";
+      case "hebrew": return "he-IL";
+      case "thai": return "th-TH";
+      case "greek": return "el-GR";
+      case "latin": {
+        // Lightweight Latin-script disambiguation using common stopwords.
+        const t = ` ${text.toLowerCase()} `;
+        const score = {
+          "en-US": /\b(the|and|i|you|with|for|salary|loan|name|please)\b/.test(t) ? 5 : 0,
+          "es-ES": /\b(el|la|los|las|y|de|por|para|hola|nombre|préstamo|salario)\b/.test(t) ? 5 : 0,
+          "fr-FR": /\b(le|la|les|et|de|pour|bonjour|nom|prêt|salaire|merci)\b/.test(t) ? 5 : 0,
+          "de-DE": /\b(der|die|das|und|ich|für|hallo|name|kredit|gehalt|bitte)\b/.test(t) ? 5 : 0,
+          "it-IT": /\b(il|la|e|di|per|ciao|nome|prestito|stipendio|grazie)\b/.test(t) ? 5 : 0,
+          "pt-BR": /\b(o|a|os|as|e|de|olá|nome|empréstimo|salário|obrigado)\b/.test(t) ? 5 : 0,
+          "tr-TR": /\b(ve|bir|için|merhaba|isim|maaş|kredi|teşekkür)\b/.test(t) ? 5 : 0,
+        };
+        const best = Object.entries(score).sort((a, b) => b[1] - a[1])[0];
+        return best[1] > 0 ? best[0] : "en-US";
+      }
+    }
+    return null;
   }
+
+  const LANG_LABELS: Record<string, string> = {
+    "en-US": "English",
+    "ar-JO": "العربية",
+    "fr-FR": "Français",
+    "es-ES": "Español",
+    "de-DE": "Deutsch",
+    "it-IT": "Italiano",
+    "pt-BR": "Português",
+    "tr-TR": "Türkçe",
+    "ru-RU": "Русский",
+    "hi-IN": "हिन्दी",
+    "zh-CN": "中文",
+    "ja-JP": "日本語",
+    "ko-KR": "한국어",
+    "he-IL": "עברית",
+    "th-TH": "ไทย",
+    "el-GR": "Ελληνικά",
+  };
+
 
 
 
@@ -942,15 +1003,21 @@ function Assistant() {
 
     // For Arabic, prefer Google Cloud TTS (much higher quality than browser voices)
     let playedViaGoogle = false;
-    if (isArabic) {
+    // Route every non-English language through Google Cloud TTS — browser
+    // voices for Arabic, Hindi, Chinese, Japanese, etc. are typically robotic.
+    const useGoogle = !ttsLang.toLowerCase().startsWith("en");
+    if (useGoogle) {
       try {
-        console.log("[TTS] requesting Google for:", text.slice(0, 40));
+        // ar-JO → ar-XA for Google's Arabic locale
+        const googleLang = isArabic ? "ar-XA" : ttsLang;
+        console.log("[TTS] requesting Google for:", googleLang, text.slice(0, 40));
         const res = await fetch("/api/tts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text, lang: "ar-XA" }),
+          body: JSON.stringify({ text, lang: googleLang }),
         });
         console.log("[TTS] /api/tts status:", res.status);
+
         if (res.ok) {
           const { audio, mime } = (await res.json()) as { audio: string; mime: string };
           // Cancel any browser-TTS that might already be queued
@@ -1190,17 +1257,15 @@ function Assistant() {
                 <strong>{speaker === "client" ? "the Client" : "the Bank Agent"}</strong>
                 {" · "}
                 {langMode === "auto"
-                  ? `Auto · ${lang === "en-US" ? "English" : "Arabic"}`
-                  : lang === "en-US"
-                    ? "English"
-                    : "Arabic (Jordan)"}
+                  ? `Auto · ${LANG_LABELS[lang] ?? lang}`
+                  : (LANG_LABELS[lang] ?? lang)}
               </p>
             </div>
             <div className="flex items-center gap-2">
               <select
                 value={langMode}
                 onChange={(e) => {
-                  const v = e.target.value as "auto" | "en-US" | "ar-JO";
+                  const v = e.target.value;
                   setLangMode(v);
                   langModeRef.current = v;
                   if (v !== "auto") {
@@ -1211,10 +1276,14 @@ function Assistant() {
                 className="text-[11px] border rounded px-2 py-1 bg-white"
                 title="Language mode"
               >
-                <option value="auto">Auto-detect</option>
-                <option value="en-US">English</option>
-                <option value="ar-JO">العربية</option>
+                <option value="auto">Auto-detect (any language)</option>
+                {Object.entries(LANG_LABELS).map(([code, label]) => (
+                  <option key={code} value={code}>
+                    {label}
+                  </option>
+                ))}
               </select>
+
 
               <button
                 onClick={() => setSpeaker((s) => (s === "client" ? "agent" : "client"))}
