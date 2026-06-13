@@ -540,15 +540,27 @@ function Assistant() {
         const result = await extractFn({ data: { transcript } });
         if (seq !== aiSeqRef.current) return;
         const before = extractedRef.current;
-        // Merge: AI wins for non-empty values; never blank an existing value
+        // Merge: AI wins for non-empty values; never blank an existing value.
+        // Cross-validate free-text fields against the transcript so an AI
+        // hallucination (very common with Arabic names) does NOT overwrite
+        // a previously-correct value or fill the form with an invented one.
         const merged: Extracted = { ...before };
+        const rejected: string[] = [];
         (Object.keys(result) as (keyof Extracted)[]).forEach((k) => {
           const v = (result as Extracted)[k];
           if (typeof v === "string" && v.trim()) {
+            if (!isExtractionGrounded(k, v, transcript)) {
+              rejected.push(`${FIELD_LABELS[k]} ("${v}")`);
+              return;
+            }
             (merged as Record<keyof Extracted, string>)[k] = v as string;
           }
         });
+        if (rejected.length) {
+          console.warn("[AI] rejected ungrounded fields:", rejected.join(", "));
+        }
         const changed = diffFields(before, merged);
+
         const score = scoreConfidence(result as unknown as Record<string, unknown>);
         pushDebug({
           source: "ai",
