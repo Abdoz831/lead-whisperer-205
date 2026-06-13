@@ -63,7 +63,7 @@ type Extracted = {
 type DebugEntry = {
   id: string;
   ts: number;
-  source: "interim" | "regex" | "ai" | "ai-error";
+  source: "interim" | "regex" | "ai" | "ai-error" | "lang";
   transcript: string;
   raw: unknown;
   confidence: number;
@@ -526,11 +526,14 @@ function Assistant() {
   langRef.current = lang;
   const langModeRef = useRef(langMode);
   langModeRef.current = langMode;
+  const recentClientSpeechRef = useRef<string[]>([]);
+  const langDetectSeqRef = useRef(0);
 
-  // Detect spoken language from a chunk of recognized text using Unicode
-  // script blocks. Returns a BCP-47 locale or null if undecidable.
+  // Detect spoken language from a chunk of recognized text using Unicode,
+  // stopwords, and common phonetic/transliterated phrases.
   function detectLang(text: string): string | null {
     if (!text) return null;
+    const normalized = ` ${text.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^\p{L}\p{N}]+/gu, " ")} `;
     const counts = {
       arabic: (text.match(/[\u0600-\u06FF]/g) || []).length,
       devanagari: (text.match(/[\u0900-\u097F]/g) || []).length, // Hindi
@@ -543,6 +546,21 @@ function Assistant() {
       greek: (text.match(/[\u0370-\u03FF]/g) || []).length,
       latin: (text.match(/[A-Za-zÀ-ÿĀ-žƒΑ-ωÑñÇç]/g) || []).length,
     };
+    const phraseScores: Record<string, number> = {
+      "ru-RU": scoreWords(normalized, [
+        "privet", "prevet", "pre vet", "menya", "minya", "zovut", "zavut", "spasibo", "pozhaluysta", "kredit", "zarplata", "rabotayu", "kompaniya", "telefon", "dobry", "da", "net", "ya", "mne", "moy", "moya",
+      ]),
+      "ar-JO": scoreWords(normalized, ["salam", "marhaba", "ana", "ismi", "esmi", "biddi", "badde", "shukran", "mumkin", "raqm", "hatif", "shughl", "shoghol", "ratib"]),
+      "fr-FR": scoreWords(normalized, ["bonjour", "salut", "merci", "appelle", "mappelle", "pret", "salaire", "travaille", "telephone", "nom"]),
+      "es-ES": scoreWords(normalized, ["hola", "gracias", "llamo", "nombre", "prestamo", "salario", "trabajo", "telefono", "empresa"]),
+      "de-DE": scoreWords(normalized, ["hallo", "danke", "ich", "heisse", "heiße", "kredit", "gehalt", "arbeite", "telefon", "firma"]),
+      "it-IT": scoreWords(normalized, ["ciao", "grazie", "chiamo", "nome", "prestito", "stipendio", "lavoro", "telefono", "azienda"]),
+      "pt-BR": scoreWords(normalized, ["ola", "obrigado", "chamo", "nome", "emprestimo", "salario", "trabalho", "telefone", "empresa"]),
+      "tr-TR": scoreWords(normalized, ["merhaba", "tesekkur", "teşekkür", "adim", "isim", "kredi", "maas", "maaş", "calisiyorum", "çalışıyorum", "telefon"]),
+    };
+    const phraseBest = Object.entries(phraseScores).sort((a, b) => b[1] - a[1])[0];
+    if (phraseBest?.[1] >= 2) return phraseBest[0];
+
     const total = Object.values(counts).reduce((a, b) => a + b, 0);
     if (total < 2) return null;
     // pick the dominant script
