@@ -334,6 +334,8 @@ export function ElipProvider({ children }: { children: ReactNode }) {
       const sorted = [...counts.entries()].sort((a, b) => a[1] - b[1]);
       const rlmId = sorted[0][0];
       const rlmName = RLMS.find((r) => r.id === rlmId)!.name;
+      // P1/P2 go straight to Active Pipeline (Docs Pending); P3/P4 wait in the Queue for manual review.
+      const initialStatus: Stage = priority === "P1" || priority === "P2" ? "Docs Pending" : "Queued";
       const lead: Lead = {
         ...input,
         lead_id: `L-${String(LEAD_COUNTER++).padStart(4, "0")}`,
@@ -343,9 +345,9 @@ export function ElipProvider({ children }: { children: ReactNode }) {
         best_time_to_call: calcBestTime(input.company_name),
         assigned_rlm: rlmId,
         submitted_at: new Date().toISOString(),
-        current_status: "Docs Pending",
+        current_status: initialStatus,
         status_history: [
-          { ts: new Date().toISOString(), by: input.submitted_by_agent, from: "Queued", to: "Docs Pending" },
+          { ts: new Date().toISOString(), by: input.submitted_by_agent, from: "Queued", to: initialStatus },
         ],
         outcome: "",
         affiliate_redirect: false,
