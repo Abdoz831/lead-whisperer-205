@@ -26,32 +26,48 @@ export const Route = createFileRoute("/api/tts")({
 
         const lang = (body.lang ?? "ar-XA").toString();
         const isArabic = lang.toLowerCase().startsWith("ar");
-        // Google's Arabic locale code is ar-XA. Use a high-quality Wavenet/Neural2 voice.
+        // Google's Arabic locale is ar-XA. Chirp3-HD voices are the newest and
+        // by far the most natural-sounding Arabic voices Google offers.
+        // Fallback chain: Chirp3-HD -> Neural2 -> Wavenet.
         const languageCode = isArabic ? "ar-XA" : lang;
         const voiceName =
-          body.voice ??
-          (isArabic ? "ar-XA-Wavenet-B" : undefined);
+          body.voice ?? (isArabic ? "ar-XA-Chirp3-HD-Achernar" : undefined);
+
+        // Chirp3-HD voices do NOT support pitch or speakingRate adjustments;
+        // sending them returns 400. Only set those for non-Chirp voices.
+        const isChirp = (voiceName ?? "").toLowerCase().includes("chirp");
+        const audioConfig: Record<string, unknown> = { audioEncoding: "MP3" };
+        if (!isChirp) {
+          audioConfig.speakingRate = isArabic ? 0.95 : 1.0;
+          audioConfig.pitch = 0;
+        }
 
         const payload = {
           input: { text },
-          voice: voiceName
-            ? { languageCode, name: voiceName }
-            : { languageCode },
-          audioConfig: {
-            audioEncoding: "MP3",
-            speakingRate: isArabic ? 0.95 : 1.0,
-            pitch: 0,
-          },
+          voice: voiceName ? { languageCode, name: voiceName } : { languageCode },
+          audioConfig,
         };
 
-        const res = await fetch(
-          `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`,
-          {
+
+        const ttsUrl = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`;
+        const callTts = (p: unknown) =>
+          fetch(ttsUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          },
-        );
+            body: JSON.stringify(p),
+          });
+
+        let res = await callTts(payload);
+
+        // If Chirp3-HD isn't enabled on this key, fall back to Wavenet automatically.
+        if (!res.ok && isArabic && isChirp) {
+          const fallbackPayload = {
+            input: { text },
+            voice: { languageCode: "ar-XA", name: "ar-XA-Wavenet-B" },
+            audioConfig: { audioEncoding: "MP3", speakingRate: 0.95, pitch: 0 },
+          };
+          res = await callTts(fallbackPayload);
+        }
 
         if (!res.ok) {
           const errText = await res.text();
@@ -65,6 +81,7 @@ export const Route = createFileRoute("/api/tts")({
         if (!data.audioContent) {
           return new Response(JSON.stringify({ error: "No audio returned" }), { status: 502 });
         }
+
 
         return new Response(JSON.stringify({ audio: data.audioContent, mime: "audio/mpeg" }), {
           status: 200,
