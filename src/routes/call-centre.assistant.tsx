@@ -1189,18 +1189,33 @@ function Assistant() {
                 Speaking as{" "}
                 <strong>{speaker === "client" ? "the Client" : "the Bank Agent"}</strong>
                 {" · "}
-                {lang === "en-US" ? "English" : "Arabic (Jordan)"}
+                {langMode === "auto"
+                  ? `Auto · ${lang === "en-US" ? "English" : "Arabic"}`
+                  : lang === "en-US"
+                    ? "English"
+                    : "Arabic (Jordan)"}
               </p>
             </div>
             <div className="flex items-center gap-2">
               <select
-                value={lang}
-                onChange={(e) => setLang(e.target.value as "en-US" | "ar-JO")}
+                value={langMode}
+                onChange={(e) => {
+                  const v = e.target.value as "auto" | "en-US" | "ar-JO";
+                  setLangMode(v);
+                  langModeRef.current = v;
+                  if (v !== "auto") {
+                    setLang(v);
+                    langRef.current = v;
+                  }
+                }}
                 className="text-[11px] border rounded px-2 py-1 bg-white"
+                title="Language mode"
               >
+                <option value="auto">Auto-detect</option>
                 <option value="en-US">English</option>
                 <option value="ar-JO">العربية</option>
               </select>
+
               <button
                 onClick={() => setSpeaker((s) => (s === "client" ? "agent" : "client"))}
                 className="text-[11px] border rounded px-2 py-1 bg-white hover:bg-zinc-50"
