@@ -539,6 +539,7 @@ function Assistant() {
   langModeRef.current = langMode;
   const recentClientSpeechRef = useRef<string[]>([]);
   const langDetectSeqRef = useRef(0);
+  const langDetectLastAiAtRef = useRef(0);
 
   // Detect spoken language from a chunk of recognized text using Unicode,
   // stopwords, and common phonetic/transliterated phrases.
@@ -604,6 +605,53 @@ function Assistant() {
       }
     }
     return null;
+  }
+
+  function applyAutoLanguageDetection(text: string, source: "interim" | "final") {
+    const snippet = text.trim();
+    if (langModeRef.current !== "auto" || speakerRef.current !== "client" || snippet.length < 2) return;
+
+    recentClientSpeechRef.current = [...recentClientSpeechRef.current.slice(-3), snippet];
+    const contextText = recentClientSpeechRef.current.join(" ").trim();
+    const applySwap = (next: string, confidence: number, method: string) => {
+      if (!next || next === langRef.current) return;
+      console.log("[LANG] auto-switching", langRef.current, "→", next, { confidence, method });
+      pushDebug({
+        source: "lang",
+        transcript: contextText,
+        raw: { from: langRef.current, to: next, method, source },
+        confidence,
+        filled: 0,
+        total: 0,
+        changed: [`Language → ${LANG_LABELS[next] ?? next}`],
+      });
+      setLang(next);
+      langRef.current = next;
+      try {
+        recRef.current?.stop();
+      } catch {
+        /* will be restarted by the lang effect */
+      }
+    };
+
+    const localDetected = detectLang(contextText) ?? detectLang(snippet);
+    if (localDetected && localDetected !== "en-US") {
+      applySwap(localDetected, 0.9, "local");
+      return;
+    }
+
+    const now = Date.now();
+    if (contextText.length < 4 || (source === "interim" && now - langDetectLastAiAtRef.current < 1400)) return;
+    langDetectLastAiAtRef.current = now;
+    const seq = ++langDetectSeqRef.current;
+    void detectLangFn({ data: { text: contextText } })
+      .then((r) => {
+        if (seq !== langDetectSeqRef.current || langModeRef.current !== "auto") return;
+        if (r?.bcp47 && r.bcp47 !== "und" && r.confidence >= 0.35) {
+          applySwap(r.bcp47, r.confidence, "ai");
+        }
+      })
+      .catch((err) => console.warn("[LANG] AI detect failed", err));
   }
 
   const LANG_LABELS: Record<string, string> = {
