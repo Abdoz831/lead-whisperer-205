@@ -415,6 +415,49 @@ function diffFields(prev: Extracted, next: Extracted): (keyof Extracted)[] {
   return keys.filter((k) => prev[k] !== next[k] && next[k] !== "");
 }
 
+// Cross-validate AI-extracted free-text fields against the transcript so we
+// don't fill the form with hallucinated values (especially Arabic names).
+// Numeric / enum fields are validated by format elsewhere, not here.
+const FREE_TEXT_FIELDS = new Set<keyof Extracted>([
+  "customer_name",
+  "company_name",
+  "job_title",
+  "financial_notes",
+]);
+
+function normalizeForMatch(s: string): string {
+  return s
+    .toLowerCase()
+    // strip Arabic diacritics (tashkeel)
+    .replace(/[\u064B-\u0652\u0670\u0640]/g, "")
+    // unify alef forms (أ إ آ ا)
+    .replace(/[\u0623\u0625\u0622]/g, "\u0627")
+    // unify yaa (ى ي)
+    .replace(/\u0649/g, "\u064a")
+    // unify taa marbouta (ة → ه)
+    .replace(/\u0629/g, "\u0647")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isExtractionGrounded(
+  field: keyof Extracted,
+  value: string,
+  transcript: string,
+): boolean {
+  if (!FREE_TEXT_FIELDS.has(field)) return true;
+  const v = normalizeForMatch(value);
+  if (!v || v.length < 2) return true;
+  const src = normalizeForMatch(transcript);
+  // For names/employer/title, each individual token (≥3 chars) must appear
+  // in the transcript. This catches hallucinated full names where the AI
+  // invents or auto-completes a family name that was never spoken.
+  const tokens = v.split(" ").filter((t) => t.length >= 3);
+  if (!tokens.length) return src.includes(v);
+  return tokens.every((tok) => src.includes(tok));
+}
+
+
 const FIELD_LABELS: Record<keyof Extracted, string> = {
   customer_name: "Customer Name",
   phone_number: "Phone",
@@ -540,15 +583,27 @@ function Assistant() {
         const result = await extractFn({ data: { transcript } });
         if (seq !== aiSeqRef.current) return;
         const before = extractedRef.current;
-        // Merge: AI wins for non-empty values; never blank an existing value
+        // Merge: AI wins for non-empty values; never blank an existing value.
+        // Cross-validate free-text fields against the transcript so an AI
+        // hallucination (very common with Arabic names) does NOT overwrite
+        // a previously-correct value or fill the form with an invented one.
         const merged: Extracted = { ...before };
+        const rejected: string[] = [];
         (Object.keys(result) as (keyof Extracted)[]).forEach((k) => {
           const v = (result as Extracted)[k];
           if (typeof v === "string" && v.trim()) {
+            if (!isExtractionGrounded(k, v, transcript)) {
+              rejected.push(`${FIELD_LABELS[k]} ("${v}")`);
+              return;
+            }
             (merged as Record<keyof Extracted, string>)[k] = v as string;
           }
         });
+        if (rejected.length) {
+          console.warn("[AI] rejected ungrounded fields:", rejected.join(", "));
+        }
         const changed = diffFields(before, merged);
+
         const score = scoreConfidence(result as unknown as Record<string, unknown>);
         pushDebug({
           source: "ai",
