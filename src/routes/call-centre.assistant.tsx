@@ -663,15 +663,21 @@ function Assistant() {
     const contextText = recentClientSpeechRef.current.join(" ").trim();
     const applySwap = (next: string, confidence: number, method: string) => {
       if (!next) return;
+      const currentLocked = lockedLangRef.current;
+      const words = wordCount(contextText);
+      if (currentLocked && next !== currentLocked) {
+        const hasScriptEvidence = scriptEvidenceFor(next, contextText) >= 2;
+        const hasStrongTransliteration = transliterationEvidenceFor(next, contextText) >= 2;
+        if (!hasScriptEvidence && !hasStrongTransliteration) return;
+      }
       if (next === langRef.current) {
-        // In auto mode we start in en-US as a probe language. Do NOT lock on
-        // English, because Chrome may emit English-looking garbage for Russian
-        // or Arabic speech; keep probing until a real non-English match lands.
-        if (next !== "en-US" || (method === "ai" && confidence >= 0.75 && contextText.split(/\s+/).length >= 3)) {
+        if (confidence >= 0.75 && words >= 3) {
           langLockedRef.current = true;
+          lockedLangRef.current = next;
         }
         return;
       }
+      if (next !== "en-US" && method === "ai" && confidence < 0.85 && scriptEvidenceFor(next, contextText) < 2 && transliterationEvidenceFor(next, contextText) < 2) return;
       console.log("[LANG] auto-switching", langRef.current, "→", next, { confidence, method });
       pushDebug({
         source: "lang",
@@ -683,6 +689,7 @@ function Assistant() {
         changed: [`Language → ${LANG_LABELS[next] ?? next}`],
       });
       langLockedRef.current = true;
+      lockedLangRef.current = next;
       lastProbeRotateAtRef.current = Date.now();
       setLang(next);
       langRef.current = next;
